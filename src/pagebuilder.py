@@ -9,7 +9,7 @@ Licensed under the MIT License
 __version__ = "1.0alpha"
 
 import metamarkdown as mm
-
+from transformer import transform
 
 
 _TEMPLATE = """
@@ -87,6 +87,13 @@ pre {{
 }}
 """.strip()
 
+_SETTINGS = """
+:meta:          author  :=  Stefan LOESCH,
+                license :=  MIT
+
+[google]:https://www.google.com
+"""
+
 _EXAMPLE = """
 :title:         Lorem Ipsum | Stefan LOESCH
 :meta:          author  :=  Stefan LOESCH,
@@ -126,10 +133,13 @@ class PageBuilder():
     
     
     _parameters = {
-        "template":         _TEMPLATE,
-        "style":            _STYLE,
-        "meta":             _META,
-        "replaceEmDash":    True,
+        "template":                 _TEMPLATE,
+        "style":                    _STYLE,
+        "meta":                     _META,
+        "settings":                 "",
+        "replaceEmDash":            True,
+        "removeComments":           True,
+        "removeLineComments":       False,
     }
     
     def __init__(s, **kwargs):
@@ -141,9 +151,12 @@ class PageBuilder():
                 s.p[param] = value
         
         s._parse = mm.Parser(
-                        fieldParsers=s._fieldParsers,
-                        replaceEmDash = s.p['replaceEmDash'],
+                        fieldParsers            = s._fieldParsers,
+                        replaceEmDash           = s.p['replaceEmDash'],
+                        removeComments          = s.p['removeComments'],
+                        removeLineComments      = s.p['removeLineComments'],
         )
+        s.read_settings(s.p['settings']);
         
     
     def updateParameters(s, **kwargs):
@@ -187,6 +200,19 @@ class PageBuilder():
         if specific_params:
             template = template.format(**specific_params)
         return template
+
+    def read_settings(s, settings):
+        """
+        process the settings file (overwrites current settings)
+
+        :settings:          the (text from) the settings file
+        """
+        s._settings_body = ""
+        s._settings_meta = {}
+        processed = s._processMetaMarkdown(settings)
+        s._settings_body = processed.body
+        s._settings_meta = processed.meta
+
     
     @property
     def _style(s):
@@ -230,8 +256,8 @@ class PageBuilder():
         """
         creates an entire HtmlPage based on the meta markdown
         """
-        processed = s._processMetaMarkdown(metaMarkdown)
-        return s.createHtmlPageFromHtml(processed.html, processed.meta)
+        processed = s._processMetaMarkdown(metaMarkdown+s._settings_body)
+        return s.createHtmlPageFromHtml(processed.html, transform([s._settings_meta, processed.meta]))
 
     def __call__(s, *args, **kwargs):
         """
@@ -245,28 +271,81 @@ pagebuilder = PageBuilder()
 
 if __name__ == "__main__":
 
-    description = "Convert (meta)markdown to html (version v{})".format(__version__)
+    description = """
+---------------------------------------
+Convert (meta)markdown to html
+---------------------------------------
+
+Metamarkdown is like Markdown, except that the preamble of the file
+can contain rst-like metadata, ie lines of the form
+
+    :fieldname:         field value
+
+and the converter algorithm uses those fields to control the outputs.
+Also there are a few extra markdown filters, for example `--` is
+converted to an em-dash. and `//` indicates a comment.
+
+The executable looks for three special files in the directory, notably
+
+- _TEMPLATE.html    -- the base template used
+- _STYLE.css        -- style information
+- _SETTINGS.md      -- a settings file
+
+Example files can be generated using the `--save-templates` flag
+(attention: files already present are overwritten without warning).
+
+The settings file is prepended to each of the executed files, both in
+terms of meta data and in terms of text (the latter is mostly useful
+for link references). Meta data in the files intelligently overwrites
+meta data from the templates. For example, the meta field `:meta:`
+generates meta tags in the html. If we have in the settings file
+
+    :meta:          field0 := value0, field1 := value0
+
+and in the processed file
+
+    :meta:          field1 := value1, field2 := value1
+
+then the meta tags generated are
+
+    <meta field0="value0">
+    <meta field1="value1">
+    <meta field2="value1">
+
+---
+Version v{}
+""".format(__version__)
 
     import sys
     import os
     import argparse    
 
-    def readStyleAndTemplates():
+    def readStyleTemplateSettings():
         """
-        look for style and template files on a number of locations
+        look for style, template and settings files on a number of locations
         """
         try:
-            with open("STYLE.css", "r") as f: style = f.read()
+            with open("_STYLE.css", "r") as f: style = f.read()
+            print ("reading local _STYLE.css")
         except FileNotFoundError:
             style = _STYLE
 
         try:
-            with open("TEMPLATE.html", "r") as f: template = f.read()
+            with open("_TEMPLATE.html", "r") as f: template = f.read()
+            print ("reading local _TEMPLATE.html")
         except FileNotFoundError:
             template = _TEMPLATE
-        return (style, template)
 
-    ap = argparse.ArgumentParser(description=description)
+        try:
+            with open("_SETTINGS.md", "r") as f: settings = f.read()
+            print ("reading local _SETTINGS.md")
+        except FileNotFoundError:
+            settings = ""
+
+        return (style, template, settings)
+
+
+    ap = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("mdfiles", nargs="*", help="metamarkdown file(s)")
     ap.add_argument("--save-templates", action="store_true", default=False, 
             help="save the style and template files locally and exit")
@@ -274,14 +353,16 @@ if __name__ == "__main__":
     #print (args)
 
     if args.save_templates:
-        print ("saving css to STYLE.css, page template to TEMPLATE.html, and example file to EXAMPLE.md")
-        with open("STYLE.css", "w") as f: f.write(_STYLE)
-        with open("TEMPLATE.html", "w") as f: f.write(_TEMPLATE)
+        print ("saving css to _STYLE.css, page template to _TEMPLATE.html, " +
+                    "settings file to _SETTINGS.md, example file to EXAMPLE.md")
+        with open("_STYLE.css", "w") as f: f.write(_STYLE)
+        with open("_TEMPLATE.html", "w") as f: f.write(_TEMPLATE)
+        with open("_SETTINGS.md", "w") as f: f.write(_SETTINGS)
         with open("EXAMPLE.md", "w") as f: f.write(_EXAMPLE)
         sys.exit(0)
 
-    style, template = readStyleAndTemplates()
-    builder = PageBuilder(style=style, template=template)
+    style, template, settings = readStyleTemplateSettings()
+    builder = PageBuilder(style=style, template=template, settings=settings)
     for fn in args.mdfiles:
         fnbase, _ = os.path.splitext(fn)
         print("converting {0} to html (output: {1}.html)".format(fn, fnbase))

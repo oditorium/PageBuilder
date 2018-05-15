@@ -118,6 +118,18 @@ def _increase_heading_level(s, increase=0):
     repl = "#"*(increase+1)
     return re.subn("^#", repl, s, flags=re.MULTILINE)[0]
 
+def _removeLineComments(s, _=0):
+    """
+    removes comments (`//` to end of line)
+    """
+    return re.subn("^[\s]*//.*$", "", s, flags=re.MULTILINE)[0]
+
+def _removeComments(s, _=0):
+    """
+    removes line comments (lines starting with `//`)
+    """
+    return re.subn("//.*$", "", s, flags=re.MULTILINE)[0]
+
 
 ################################################################################
 ## HELPER FUNCTIONS
@@ -172,15 +184,29 @@ def _remove_leading_spaces(lines):
     return [l[num_leading_spaces:] for l in lines]
 
 
+
 ################################################################################
 ## CLASS PARSER 
 ################################################################################
 class Parser():
+    """
+    parse a metamarkdown file
+
+
+    Filters
+
+    :increaseHeadingLevel:          increase heading level (eg 1: # -> ##, ## -> ### etc)
+    :replaceEmDash:                 replace -- with em dash
+    :removeComments:                remove all comments (`//` to end of line)
+    :removeLineComments:            remove line comments (lines starting with `//`)
+    """
 
       
     _filters = {
             "increaseHeadingLevel":     _increase_heading_level,
             "replaceEmDash":            _replace_emdash,
+            "removeComments":           _removeComments,
+            "removeLineComments":       _removeLineComments,
     }
 
 
