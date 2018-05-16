@@ -35,7 +35,7 @@ USAGE
 Licensed under the MIT License
 <https://opensource.org/licenses/MIT>
 """
-__version__ = "0.1"
+__version__ = "0.2"
 
 
 import re
