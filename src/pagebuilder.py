@@ -9,6 +9,7 @@ Licensed under the MIT License
 __version__ = "1.1beta"
 
 import metamarkdown as mm
+import markdown as mdwn
 from transformer import transform
 
 
@@ -118,6 +119,10 @@ _META = """
 <meta {field}="{value}">
 """.strip()
 
+_INDEX = """# Index\n{}"""
+_INDEX_LINE = """- [{0[0]}]({0[2]})"""
+
+
 class PageBuilder():
     """
     converts metamarkdown files into self-contained and styled html files
@@ -140,6 +145,7 @@ class PageBuilder():
         "replaceEmDash":            True,
         "removeComments":           True,
         "removeLineComments":       False,
+        #"definitionsOnly":          False,
     }
     
     def __init__(s, **kwargs):
@@ -155,7 +161,8 @@ class PageBuilder():
                         replaceEmDash           = s.p['replaceEmDash'],
                         removeComments          = s.p['removeComments'],
                         removeLineComments      = s.p['removeLineComments'],
-        )
+                        #definitionsOnly         = s.p['definitionsOnly'],
+        ) 
         s.read_settings(s.p['settings']);
         
     
@@ -209,7 +216,11 @@ class PageBuilder():
         """
         s._settings_body = ""
         s._settings_meta = {}
-        processed = s._processMetaMarkdown(settings)
+        processed = mm.Parser(
+                        fieldParsers=s._fieldParsers, 
+                        definitionsOnly=True, 
+                        removeLineComments=False, 
+                        removeComments=False)(settings)
         s._settings_body = processed.body
         s._settings_meta = processed.meta
 
@@ -289,7 +300,7 @@ The executable looks for three special files in the directory, notably
 
 - _TEMPLATE.html    -- the base template used
 - _STYLE.css        -- style information
-- _SETTINGS.md      -- a settings file
+- _SETTINGS         -- a settings file (meta markdown format)
 
 Example files can be generated using the `--save-templates` flag
 (attention: files already present are overwritten without warning).
@@ -337,8 +348,8 @@ Version v{}
             template = _TEMPLATE
 
         try:
-            with open("_SETTINGS.md", "r") as f: settings = f.read()
-            print ("reading local _SETTINGS.md")
+            with open("_SETTINGS", "r") as f: settings = f.read()
+            print ("reading local _SETTINGS")
         except FileNotFoundError:
             settings = ""
 
@@ -349,26 +360,61 @@ Version v{}
     ap.add_argument("mdfiles", nargs="*", help="metamarkdown file(s)")
     ap.add_argument("--save-templates", action="store_true", default=False, 
             help="save the style and template files locally and exit")
+    ap.add_argument("--serve", action="store_true", default=False, 
+            help="run an http server (port 8314) on the current location")
     args = ap.parse_args()
     #print (args)
 
     if args.save_templates:
         print ("saving css to _STYLE.css, page template to _TEMPLATE.html, " +
-                    "settings file to _SETTINGS.md, example file to EXAMPLE.md")
+                    "settings file to _SETTINGS, example file to EXAMPLE.md")
         with open("_STYLE.css", "w") as f: f.write(_STYLE)
         with open("_TEMPLATE.html", "w") as f: f.write(_TEMPLATE)
-        with open("_SETTINGS.md", "w") as f: f.write(_SETTINGS)
+        with open("_SETTINGS", "w") as f: f.write(_SETTINGS)
         with open("EXAMPLE.md", "w") as f: f.write(_EXAMPLE)
         sys.exit(0)
 
     style, template, settings = readStyleTemplateSettings()
     builder = PageBuilder(style=style, template=template, settings=settings)
+    files = []
     for fn in args.mdfiles:
         fnbase, _ = os.path.splitext(fn)
+        fnhtml = fnbase+".html"
+        files.append( (fn, fnbase, fnhtml) )
         print("converting {0} to html (output: {1}.html)".format(fn, fnbase))
         with open(fn, "r") as f: mmd = f.read()
         html = builder(mmd)
-        with open(fnbase+".html", "w") as f: f.write(html)
+        with open(fnhtml, "w") as f: f.write(html)
 
+    # creating index.html
+    print ("writing index.html")
+    md = "\n".join(_INDEX_LINE.format(f) for f in files)
+    md = _INDEX.format(md)
+    with open("index.html", "w") as f: 
+        f.write(_TEMPLATE.format(body=mdwn.markdown(md), style="", metatags=""))
 
+    if args.serve:
+        import http.server as hs
+        def run_server(port, bind=None, handler_class=None, server_class=None, protocol=None):
+            """
+            serve the local directory (code from http.server)
+            """
+            if handler_class is None: handler_class = hs.SimpleHTTPRequestHandler 
+            if server_class  is None: server_class  = hs.HTTPServer
+            if protocol      is None: protocol      = "HTTP/1.0"
+            if bind          is None: bind          = "127.0.0.1"
 
+            server_address = (bind, port)
+            handler_class.protocol_version = protocol
+            #with server_class(server_address, handler_class) as httpd: # does not work in 3.4
+            httpd = server_class(server_address, handler_class)
+            sa = httpd.socket.getsockname()
+            serve_message = "Serving HTTP on {host} port {port} (http://{host}:{port}/) ..."
+            print(serve_message.format(host=sa[0], port=sa[1]))
+            try:
+                httpd.serve_forever()
+            except KeyboardInterrupt:
+                print("\nKeyboard interrupt received, exiting.")
+                sys.exit(0)
+            #end with
+        run_server(8000)

@@ -103,11 +103,11 @@ def parse_markdown(s):
 ## FILTERS
 ################################################################################
 
-def _replace_emdash(s, replace=True):
+def _replace_emdash(s, execute=True):
     """
     replace -- with em-dash
     """
-    if not replace: return s
+    if not execute: return s
     return re.sub("[\s]*--[\s]*", "—", s)
 
 def _increase_heading_level(s, increase=0):
@@ -118,17 +118,26 @@ def _increase_heading_level(s, increase=0):
     repl = "#"*(increase+1)
     return re.subn("^#", repl, s, flags=re.MULTILINE)[0]
 
-def _removeLineComments(s, _=0):
+def _removeLineComments(s, execute=True):
     """
     removes comments (`//` to end of line)
     """
+    if not execute: return s
     return re.subn("^[\s]*//.*$", "", s, flags=re.MULTILINE)[0]
 
-def _removeComments(s, _=0):
+def _removeComments(s, execute=0):
     """
     removes line comments (lines starting with `//`)
     """
-    return re.subn("//.*$", "", s, flags=re.MULTILINE)[0]
+    if not execute: return s
+    return re.subn("\s//.*$", "", s, flags=re.MULTILINE)[0]
+
+def _definitionsOnly(s, execute=0):
+    """
+    removes all text lines (only keeps definition of the form [name]:url)
+    """
+    if not execute: return s
+    return "\n".join(re.findall("^\s*[[].*[\]]:.*$", s, re.MULTILINE))
 
 
 ################################################################################
@@ -199,6 +208,7 @@ class Parser():
     :replaceEmDash:                 replace -- with em dash
     :removeComments:                remove all comments (`//` to end of line)
     :removeLineComments:            remove line comments (lines starting with `//`)
+    :definitionsOnly:               only keeps definition lines (starting with `[`)  
     """
 
       
@@ -207,6 +217,7 @@ class Parser():
             "replaceEmDash":            _replace_emdash,
             "removeComments":           _removeComments,
             "removeLineComments":       _removeLineComments,
+            "definitionsOnly":          _definitionsOnly,
     }
 
 
@@ -216,6 +227,7 @@ class Parser():
         s.fieldParsers      = fieldParsers
         s.createHtml        = createHtml
         s.filterSettings    = filterSettings
+
 
     ######################################################################
     ## APPLY FILTERS
