@@ -1,4 +1,4 @@
-#!/usr/bin/env python3 
+#!/usr/bin/env python3
 """
 creates a self-contained HTML page from a metamarkdown file
 
@@ -6,7 +6,7 @@ creates a self-contained HTML page from a metamarkdown file
 Licensed under the MIT License
 <https://opensource.org/licenses/MIT>
 """
-__version__ = "1.2"
+__version__ = "1.3"
 
 import metamarkdown as mm
 import markdown as mdwn
@@ -17,26 +17,28 @@ _TEMPLATE = """
 <html>
 
     <head>
-        
+
+        <title>{title}</title>
+
         <meta charset="UTF-8">
         {metatags}
-        
+
         <style>
         {style}
         </style>
-        
+
         <base target="_blank">
-   
+
     </head>
 
     <body>
-    
+
         <div id='body'>
         {body}
         </div>
-        
+
     </body>
-    
+
 </html>
 """.strip()
 
@@ -105,14 +107,14 @@ _EXAMPLE = """
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 Suspendisse ultricies euismod nunc, at fermentum nisl
-scelerisque semper. 
+scelerisque semper.
 
-- Sed a enim quam. 
+- Sed a enim quam.
 - Sed et sem eget.
 
 Nulla efficitur iaculis. Fusce rhoncus convallis ligula,
 consectetur bibendum ante tincidunt ac. Sed volutpat
-quam condimentum magna ornare pulvinar. 
+quam condimentum magna ornare pulvinar.
 """.strip()
 
 _META = """
@@ -127,7 +129,7 @@ class PageBuilder():
     """
     converts metamarkdown files into self-contained and styled html files
     """
-    
+
     _fieldParsers = {
         "title":            str,
         "tags":             mm.parse_csv,
@@ -135,8 +137,8 @@ class PageBuilder():
         "meta":             mm.parse_dict,
         "headinglevel":     int,
     }
-    
-    
+
+
     _parameters = {
         "template":                 _TEMPLATE,
         "style":                    _STYLE,
@@ -147,29 +149,29 @@ class PageBuilder():
         "removeLineComments":       False,
         #"definitionsOnly":          False,
     }
-    
+
     def __init__(s, **kwargs):
         s.p = {} # parameter
         for param, value in s._parameters.items():
-            try: 
+            try:
                 s.p[param] = kwargs[param]
             except KeyError:
                 s.p[param] = value
-        
+
         s._parse = mm.Parser(
                         fieldParsers            = s._fieldParsers,
                         replaceEmDash           = s.p['replaceEmDash'],
                         removeComments          = s.p['removeComments'],
                         removeLineComments      = s.p['removeLineComments'],
                         #definitionsOnly         = s.p['definitionsOnly'],
-        ) 
+        )
         s.read_settings(s.p['settings']);
-        
-    
+
+
     def updateParameters(s, **kwargs):
         """
         update the parameters from `kwargs` (only those in kwargs)
-        
+
         :kwargs:          parameters in the form `n1=v1, n2=b2, ...`
                           use `**{n1:v1, n2:v2}` to pass dicts
         """
@@ -178,18 +180,18 @@ class PageBuilder():
                 pass
                 #raise ValueError("Unknown parameter", param, tuple(s.p.keys()))
             s.p[param] = value
-        
-    
+
+
     def _processMetaMarkdown(s, md):
         """
         processes one markdown file
         """
         return s._parse(md)
-    
+
     def _process_template(s, template_name, specific_params=None):
         """
         processes template strings eg for the page template or style
-        
+
         :template_name:     key of the template in `s.p`
         :specific_params:   parameters specific to the file rendered (eg
                             the body html for rendering a page template)
@@ -205,7 +207,14 @@ class PageBuilder():
         }
         specific_params.update(params)
         if specific_params:
-            template = template.format(**specific_params)
+            try:
+                template = template.format(**specific_params)
+            except KeyError as e:
+                print ("\nTEMPLATE ERROR\n=================")
+                print ("defined items: ", tuple(specific_params.keys()))
+                print ("missing item:  ", e)
+                print ()
+                template = "KEY ERROR: {} ".format(e)
         return template
 
     def read_settings(s, settings):
@@ -217,58 +226,68 @@ class PageBuilder():
         s._settings_body = ""
         s._settings_meta = {}
         processed = mm.Parser(
-                        fieldParsers=s._fieldParsers, 
-                        definitionsOnly=True, 
-                        removeLineComments=False, 
+                        fieldParsers=s._fieldParsers,
+                        definitionsOnly=True,
+                        removeLineComments=False,
                         removeComments=False)(settings)
         s._settings_body = processed.body
         s._settings_meta = processed.meta
 
-    
+
     @property
     def _style(s):
         """
         processes the internal style template
-        
+
         :returns:   the style to be used with all parameters resolved
         """
         return s._process_template("style")
-    
+
     def _template(s, **params):
         """
         processes the internal page template, returning propert HTML
-        
+
         :params:    keyword arguments corresponding to the fields the
                     template expect to be filled from the file data,
                     such as body text and style
         :returns:   the final page HTML
         """
         return s._process_template("template", params)
-            
-    
+
+
     def createHtmlPageFromHtml(s, bodyHtml, meta=None):
         """
         creates an entire HtmlPage based on the bodyHtml and meta data
         """
         if meta is None: meta = {}
-        
+        #print(meta)
+
+        title = meta.get("title", "")
         metaTags = (
-                s.p['meta'].format(field=field, value=value) 
+                s.p['meta'].format(field=field, value=value)
                 for field, value in meta.get("meta", {}).items()
         )
-        
+
         return s._template(
-            body=bodyHtml, 
-            metatags = "\n".join(metaTags),
+            body=bodyHtml,
+            metatags = "\n".join(metaTags), # that's html meta tags
             style=s._style,
+            **meta                          # that's meta data that might be rendered
         )
-    
+
     def createHtmlPageFromMetaMarkdown(s, metaMarkdown):
         """
         creates an entire HtmlPage based on the meta markdown
+
+        :returns:   tuple(html, metaData)
         """
         processed = s._processMetaMarkdown(metaMarkdown+s._settings_body)
-        return s.createHtmlPageFromHtml(processed.html, transform([s._settings_meta, processed.meta]))
+        metaData = transform([s._settings_meta, processed.meta])
+        html = s.createHtmlPageFromHtml(
+                    bodyHtml    = processed.html,
+                    meta        = metaData,
+        )
+        return (html, metaData)
 
     def __call__(s, *args, **kwargs):
         """
@@ -329,7 +348,7 @@ Version v{}
 
     import sys
     import os
-    import argparse    
+    import argparse
 
     def readStyleTemplateSettings():
         """
@@ -358,10 +377,12 @@ Version v{}
 
     ap = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("mdfiles", nargs="*", help="metamarkdown file(s)")
-    ap.add_argument("--save-templates", action="store_true", default=False, 
+    ap.add_argument("--save-templates", action="store_true", default=False,
             help="save the style and template files locally and exit")
-    ap.add_argument("--serve", action="store_true", default=False, 
+    ap.add_argument("--serve", action="store_true", default=False,
             help="run an http server (port 8314) on the current location")
+    ap.add_argument("--no-style", action="store_true", default=False,
+            help="do not include style information into the html output")
     args = ap.parse_args()
     #print (args)
 
@@ -375,23 +396,26 @@ Version v{}
         sys.exit(0)
 
     style, template, settings = readStyleTemplateSettings()
+    if args.no_style: style = ""
     builder = PageBuilder(style=style, template=template, settings=settings)
     files = []
     for fn in args.mdfiles:
         fnbase, _ = os.path.splitext(fn)
         fnhtml = fnbase+".html"
         files.append( (fn, fnbase, fnhtml) )
-        print("converting {0} to html (output: {1}.html)".format(fn, fnbase))
         with open(fn, "r") as f: mmd = f.read()
-        html = builder(mmd)
+        html, meta_data = builder(mmd)
+        if "filename" in meta_data: fnhtml = meta_data['filename'].strip()
+        print("converting {0} to html (output: {1})".format(fn, fnhtml))
         with open(fnhtml, "w") as f: f.write(html)
 
     # creating index.html
     print ("writing index.html")
     md = "\n".join(_INDEX_LINE.format(f) for f in files)
+        # TODO: this is wrong if the file contains the `filename` directive
     md = _INDEX.format(md)
-    with open("index.html", "w") as f: 
-        f.write(_TEMPLATE.format(body=mdwn.markdown(md), style="", metatags=""))
+    with open("index.html", "w") as f:
+        f.write(_TEMPLATE.format(body=mdwn.markdown(md), title="INDEX", style="", metatags=""))
 
     if args.serve:
         import http.server as hs
@@ -399,7 +423,7 @@ Version v{}
             """
             serve the local directory (code from http.server)
             """
-            if handler_class is None: handler_class = hs.SimpleHTTPRequestHandler 
+            if handler_class is None: handler_class = hs.SimpleHTTPRequestHandler
             if server_class  is None: server_class  = hs.HTTPServer
             if protocol      is None: protocol      = "HTTP/1.0"
             if bind          is None: bind          = "127.0.0.1"
