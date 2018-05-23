@@ -1,0 +1,18 @@
+# Example 1 -- Indepedent Files
+
+## Usage
+
+- run `convert` to convert the files
+- run `serve` to serve the current directory
+- run `clean` to remove generated files
+
+## Description
+
+This is an example for converting files into a a single html
+file: when running the `convert` command,  the all files in
+the directory are converted into a single file called `QQQ`
+(as will as into individual files).
+
+Additionally a convenience file `index.html` is created
+that links to all generated files, in the order in which
+they appeared on the command line.
