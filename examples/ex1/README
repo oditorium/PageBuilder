@@ -1,0 +1,18 @@
+# Example 1 -- Indepedent Files
+
+## Usage
+
+- run `convert` to convert the files
+- run `serve` to serve the current directory
+- run `clean` to remove generated files
+
+## Description
+
+This is an example for converting a files one-by-one: when
+running the `convert` command,  the files `test1.md` and
+`test2.md` are converted to `test1.html` and `test2.html`
+respectively.
+
+Additionally a convenience file `index.html` is created
+that links to all generated files, in the order in which
+they appeared on the command line.

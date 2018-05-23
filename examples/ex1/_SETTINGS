@@ -1,10 +1,25 @@
+// The _SETTINGS file is prepended to each file processed if
+// headings or regular text is present in this file it will
+// be removed (this allows using headings and text to
+// structure the file).
+
+// The purpose of the settings file is to store global  meta
+// data as well as links. For meta data the general rule is
+// that subsequent definitions overwrite prior ones, so the
+// settings file can either hold data that is needed
+// everywhere, or default values that can be overwritten in
+// the respective files
+
 :meta:          basefield := basevalue1, field1 := value0
+
 
 # This is a heading that will be removed
 
 This is text that will be removed
 
+
+// Links are defined using the standard Markdown format.
+// For example the below link will allow to link to google
+// in any document doing [link to Google][google].
+
 [google]:https://www.google.com
-
-
-
