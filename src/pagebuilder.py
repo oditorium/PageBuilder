@@ -390,6 +390,32 @@ Version v{}
     args = ap.parse_args()
     #print (args)
 
+    if args.serve:
+        import http.server as hs
+        def run_server(port, bind=None, handler_class=None, server_class=None, protocol=None):
+            """
+            serve the local directory (code from http.server)
+            """
+            if handler_class is None: handler_class = hs.SimpleHTTPRequestHandler
+            if server_class  is None: server_class  = hs.HTTPServer
+            if protocol      is None: protocol      = "HTTP/1.0"
+            if bind          is None: bind          = "127.0.0.1"
+
+            server_address = (bind, port)
+            handler_class.protocol_version = protocol
+            #with server_class(server_address, handler_class) as httpd: # does not work in 3.4
+            httpd = server_class(server_address, handler_class)
+            sa = httpd.socket.getsockname()
+            serve_message = "Serving HTTP on {host} port {port} (http://{host}:{port}/) ..."
+            print(serve_message.format(host=sa[0], port=sa[1]))
+            try:
+                httpd.serve_forever()
+            except KeyboardInterrupt:
+                print("\nKeyboard interrupt received, exiting.")
+                sys.exit(0)
+            #end with
+        run_server(8000)
+
     if args.version:
         print(__version__)
         sys.exit(0)
@@ -440,29 +466,3 @@ Version v{}
     md = _INDEX.format(md)
     with open("index.html", "w") as f:
         f.write(_TEMPLATE.format(body=mdwn.markdown(md), title="INDEX", style="", metatags=""))
-
-    if args.serve:
-        import http.server as hs
-        def run_server(port, bind=None, handler_class=None, server_class=None, protocol=None):
-            """
-            serve the local directory (code from http.server)
-            """
-            if handler_class is None: handler_class = hs.SimpleHTTPRequestHandler
-            if server_class  is None: server_class  = hs.HTTPServer
-            if protocol      is None: protocol      = "HTTP/1.0"
-            if bind          is None: bind          = "127.0.0.1"
-
-            server_address = (bind, port)
-            handler_class.protocol_version = protocol
-            #with server_class(server_address, handler_class) as httpd: # does not work in 3.4
-            httpd = server_class(server_address, handler_class)
-            sa = httpd.socket.getsockname()
-            serve_message = "Serving HTTP on {host} port {port} (http://{host}:{port}/) ..."
-            print(serve_message.format(host=sa[0], port=sa[1]))
-            try:
-                httpd.serve_forever()
-            except KeyboardInterrupt:
-                print("\nKeyboard interrupt received, exiting.")
-                sys.exit(0)
-            #end with
-        run_server(8000)
