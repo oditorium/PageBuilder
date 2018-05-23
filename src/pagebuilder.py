@@ -279,7 +279,7 @@ class PageBuilder():
         """
         creates an entire HtmlPage based on the meta markdown
 
-        :returns:   tuple(html, metaData)
+        :returns:   tuple(html, innerHtml, metaData)
         """
         processed = s._processMetaMarkdown(metaMarkdown+s._settings_body)
         metaData = transform([s._settings_meta, processed.meta])
@@ -287,7 +287,7 @@ class PageBuilder():
                     bodyHtml    = processed.html,
                     meta        = metaData,
         )
-        return (html, metaData)
+        return (html, processed.html, metaData)
 
     def __call__(s, *args, **kwargs):
         """
@@ -379,10 +379,12 @@ Version v{}
     ap.add_argument("mdfiles", nargs="*", help="metamarkdown file(s)")
     ap.add_argument("--save-templates", action="store_true", default=False,
             help="save the style and template files locally and exit")
-    ap.add_argument("--serve", action="store_true", default=False,
-            help="run an http server (port 8314) on the current location")
     ap.add_argument("--no-style", action="store_true", default=False,
             help="do not include style information into the html output")
+    ap.add_argument("--join", action="store_true", default=False,
+            help="create joined up file of all the input files")
+    ap.add_argument("--serve", action="store_true", default=False,
+            help="run an http server (port 8314) on the current location")
     args = ap.parse_args()
     #print (args)
 
@@ -399,20 +401,36 @@ Version v{}
     if args.no_style: style = ""
     builder = PageBuilder(style=style, template=template, settings=settings)
     files = []
+    full_html = ""
+    full_meta = {}
     for fn in args.mdfiles:
         fnbase, _ = os.path.splitext(fn)
         fnhtml = fnbase+".html"
         files.append( (fn, fnbase, fnhtml) )
         with open(fn, "r") as f: mmd = f.read()
-        html, meta_data = builder(mmd)
+        html, inner_html, meta_data = builder(mmd)
+        full_html = full_html + inner_html
+        full_meta = transform([meta_data, full_meta])
+            # this applies the meta data from the right, so oldest entry wins!
+            # (in particular, settings always win!)
         if "filename" in meta_data: fnhtml = meta_data['filename'].strip()
         print("converting {0} to html (output: {1})".format(fn, fnhtml))
         with open(fnhtml, "w") as f: f.write(html)
 
+    # creating page.html
+    if args.join or 'join' in full_meta or 'jointfilename' in full_meta:
+        html = builder.createHtmlPageFromHtml(full_html, full_meta)
+        if "jointfilename" in full_meta: fnhtml = full_meta['jointfilename'].strip()
+        else: fnhtml = "document.html"
+        print("saving joined html file (output: {0})".format(fnhtml))
+        with open(fnhtml, "w") as f: f.write(html)
+
+
     # creating index.html
-    print ("writing index.html")
+    print ("saving index (output: index.html)")
     md = "\n".join(_INDEX_LINE.format(f) for f in files)
         # TODO: this is wrong if the file contains the `filename` directive
+        # TODO: this does not link to the joined file
     md = _INDEX.format(md)
     with open("index.html", "w") as f:
         f.write(_TEMPLATE.format(body=mdwn.markdown(md), title="INDEX", style="", metatags=""))
