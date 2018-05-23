@@ -10,7 +10,7 @@ __version__ = "1.3"
 
 import metamarkdown as mm
 import markdown as mdwn
-from transformer import transform
+from transformer import contract
 
 
 _TEMPLATE = """
@@ -282,7 +282,7 @@ class PageBuilder():
         :returns:   tuple(html, innerHtml, metaData)
         """
         processed = s._processMetaMarkdown(metaMarkdown+s._settings_body)
-        metaData = transform([s._settings_meta, processed.meta])
+        metaData = contract([s._settings_meta, processed.meta])
         html = s.createHtmlPageFromHtml(
                     bodyHtml    = processed.html,
                     meta        = metaData,
@@ -442,7 +442,7 @@ Version v{}
         with open(fn, "r") as f: mmd = f.read()
         html, inner_html, meta_data = builder(mmd)
         full_html = full_html + inner_html
-        full_meta = transform([meta_data, full_meta])
+        full_meta = contract([meta_data, full_meta])
             # this applies the meta data from the right, so oldest entry wins!
             # (in particular, settings always win!)
         if "filename" in meta_data: fnhtml = meta_data['filename'].strip()
