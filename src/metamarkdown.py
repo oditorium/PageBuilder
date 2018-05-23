@@ -111,7 +111,7 @@ def _replace_emdash(s, execute=True):
     return re.sub("[\s]*--[\s]*", "—", s)
 
 def _increase_heading_level(s, increase=0):
-    """ 
+    """
     increase heading level by `increase` steps
     """
     if increase <= 0: return s
@@ -195,7 +195,7 @@ def _remove_leading_spaces(lines):
 
 
 ################################################################################
-## CLASS PARSER 
+## CLASS PARSER
 ################################################################################
 class Parser():
     """
@@ -208,10 +208,10 @@ class Parser():
     :replaceEmDash:                 replace -- with em dash
     :removeComments:                remove all comments (`//` to end of line)
     :removeLineComments:            remove line comments (lines starting with `//`)
-    :definitionsOnly:               only keeps definition lines (starting with `[`)  
+    :definitionsOnly:               only keeps definition lines (starting with `[`)
     """
 
-      
+
     _filters = {
             "increaseHeadingLevel":     _increase_heading_level,
             "replaceEmDash":            _replace_emdash,
@@ -222,7 +222,7 @@ class Parser():
 
 
     ######################################################################
-    ## CONSTRUCTOR 
+    ## CONSTRUCTOR
     def __init__(s, fieldParsers=None, createHtml=True, **filterSettings):
         s.fieldParsers      = fieldParsers
         s.createHtml        = createHtml
@@ -245,7 +245,7 @@ class Parser():
 
 
     ######################################################################
-    ## _PARSE 
+    ## _PARSE
     def _parse(s, doc):
         """
         parses meta markdown document into a custom structure
@@ -346,7 +346,7 @@ class Parser():
 
 
     ######################################################################
-    ## PARSE 
+    ## PARSE
     def parse (s, doc, fieldParsers=None):
         """
         parses a meta-markdown document (starts with rst-like meta data, then markdown)
@@ -354,7 +354,7 @@ class Parser():
         :doc:               the meta-markdown document
         :fieldParsers:      dict fieldName: fieldParser
         :returns:           the function returns a SimpleNamespace where the meta fields
-                            are in `.meta` and the raw body is in `.body`. If html is 
+                            are in `.meta` and the raw body is in `.body`. If html is
                             created this is in `.html`
 
         Document Definition
@@ -374,7 +374,7 @@ class Parser():
         body is the first line that starts at col 0 where there is no field
         definition following.
         """
-    
+
         if fieldParsers is None: fieldParsers = s.fieldParsers;
         if fieldParsers is None: fieldParsers = {}
 
@@ -391,13 +391,18 @@ class Parser():
         # apply all selected filters to the markdown
         body = s._applyFilters(body)
 
+            # TODO: increase headinglevels is a bit complex because
+            # the info whether to increase or not is contained _in_
+            # the file so either this must be read done here, or the
+            # file must be scanned twice...
+
         # convert the markdown to html (if desired)
         if s.createHtml:
             html = mdwn.markdown(body)
             return SimpleNamespace(
                 meta        = meta,
                 body        = body,
-                html        = html, 
+                html        = html,
             )
 
         return SimpleNamespace(
@@ -407,7 +412,7 @@ class Parser():
 
 
     ######################################################################
-    ## __CALL__ 
+    ## __CALL__
     def __call__(s, *args, **kwargs):
         """
         alias for `parse`
@@ -421,4 +426,3 @@ metamarkdown    = parsemd
 
 parsetext       = Parser(createHtml=False)
 text            = parsetext
-
