@@ -377,16 +377,22 @@ Version v{}
 
     ap = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("mdfiles", nargs="*", help="metamarkdown file(s)")
-    ap.add_argument("--save-templates", action="store_true", default=False,
+    ap.add_argument("--save-templates", "-t", action="store_true", default=False,
             help="save the style and template files locally and exit")
     ap.add_argument("--no-style", action="store_true", default=False,
             help="do not include style information into the html output")
-    ap.add_argument("--join", action="store_true", default=False,
+    ap.add_argument("--join", "-j", action="store_true", default=False,
             help="create joined up file of all the input files")
     ap.add_argument("--serve", action="store_true", default=False,
             help="run an http server (port 8314) on the current location")
+    ap.add_argument("--version", "-v", action="store_true", default=False,
+            help="print version number")
     args = ap.parse_args()
     #print (args)
+
+    if args.version:
+        print(__version__)
+        sys.exit(0)
 
     if args.save_templates:
         print ("saving css to _STYLE.css, page template to _TEMPLATE.html, " +
