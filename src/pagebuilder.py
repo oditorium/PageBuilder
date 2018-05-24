@@ -45,6 +45,10 @@ _TEMPLATE = """
 </html>
 """.strip()
 
+_SECTIONTEMPLATE="""
+{body}
+"""
+
 _STYLE = """
 :parameters:    baseFont        := sans-serif,
                 baseFontsize    := 28px,
@@ -158,6 +162,8 @@ class PageBuilder():
 
     _parameters = {
         "template":                 _TEMPLATE,
+        "sectiontemplate":          _SECTIONTEMPLATE,
+        "cleantemplate":            _SECTIONTEMPLATE,
         "style":                    _STYLE,
         "meta":                     _META,
         "settings":                 "",
@@ -199,11 +205,11 @@ class PageBuilder():
             s.p[param] = value
 
 
-    def _processMetaMarkdown(s, md):
+    def _processMetaMarkdown(s, md, createHtml=True):
         """
         processes one markdown file
         """
-        return s._parse(md)
+        return s._parse(md, createHtml=createHtml)
 
     def _process_template(s, template_name, specific_params=None):
         """
@@ -250,7 +256,6 @@ class PageBuilder():
         s._settings_body = processed.body
         s._settings_meta = processed.meta
 
-
     @property
     def _style(s):
         """
@@ -262,17 +267,33 @@ class PageBuilder():
 
     def _template(s, **params):
         """
-        processes the internal page template, returning propert HTML
+        processes the full-page template, returning a complete page including <html>, <head> and <body> tags
 
         :params:    keyword arguments corresponding to the fields the
                     template expect to be filled from the file data,
                     such as body text and style
-        :returns:   the final page HTML
+        :returns:   the final page HTML including <html>, <head> and <body> tags
         """
         return s._process_template("template", params)
 
+    def _sectionTemplate(s, **params):
+        """
+        processes section template, returning the html for the section
 
-    def createHtmlPageFromHtml(s, bodyHtml, meta=None):
+        :params:    keyword arguments corresponding to the fields the
+                    template expect to be filled from the file data
+        :returns:   the section html
+        """
+        sectionTemplateName = params.get("sectiontemplate", "sectiontemplate").strip()
+            # the files can define another section template name that can be
+            # used to render one particular file; for the time being there
+            # is no api however to provide additional templates, so the only
+            # useful choices are "sectiontemplate" (which is the template
+            # from the _SECTIONTEMPLATE.html file) and "cleantemplate" which
+            # is the default template that renders the body only
+        return s._process_template(sectionTemplateName, params)
+
+    def createHtmlPageFromHtmlAndMeta(s, bodyHtml, meta=None):
         """
         creates an entire HtmlPage based on the bodyHtml and meta data
         """
@@ -300,12 +321,16 @@ class PageBuilder():
         """
         processed = s._processMetaMarkdown(metaMarkdown+s._settings_body)
         metaData = contract([s._settings_meta, processed.meta])
-        html = s.createHtmlPageFromHtml(
-                    bodyHtml    = processed.html,
-                    meta        = metaData,
-        )
-        MMD = namedtuple("mmdData", "pageHtml innerHtml metaData metaDataRaw")
-        return MMD(html, processed.html, metaData, processed.meta)
+
+        # apply the section template
+        sectionHtml = s._sectionTemplate(body=processed.html, **metaData)
+
+        # apply the main template
+        html = s.createHtmlPageFromHtmlAndMeta(bodyHtml=sectionHtml, meta=metaData)
+
+        # return the results
+        MMD = namedtuple("mmdData", "pageHtml sectionHtml metaData metaDataRaw")
+        return MMD(html, sectionHtml, metaData, processed.meta)
 
     def __call__(s, *args, **kwargs):
         """
@@ -318,6 +343,42 @@ pagebuilder = PageBuilder()
 
 #######################################################################
 ## MAIN
+
+# QUESTION:
+# Should those functions be included in the object? Or in a derived
+# object? Currently this code can not be reused if some things are
+# meant to be changed, but inside an object they could be overwritten
+# by inheritance
+
+def _main_readStyleTemplateSettings():
+    """
+    look for style, template and settings files on a number of locations
+    """
+    try:
+        with open("_STYLE.css", "r") as f: style = f.read()
+        print ("reading local _STYLE.css")
+    except FileNotFoundError:
+        style = _STYLE
+
+    try:
+        with open("_TEMPLATE.html", "r") as f: template = f.read()
+        print ("reading local _TEMPLATE.html")
+    except FileNotFoundError:
+        template = _TEMPLATE
+
+    try:
+        with open("_SECTIONTEMPLATE.html", "r") as f: sectiontemplate = f.read()
+        print ("reading local _SECTIONTEMPLATE.html")
+    except FileNotFoundError:
+        sectiontemplate = _SECTIONTEMPLATE
+
+    try:
+        with open("_SETTINGS", "r") as f: settings = f.read()
+        print ("reading local _SETTINGS")
+    except FileNotFoundError:
+        settings = ""
+
+    return (style, template, sectiontemplate, settings)
 
 def main(**kwargs):
     """
@@ -361,21 +422,27 @@ def main(**kwargs):
         run_server(port)
 
     if kwargs.get("save_templates", False):
-        print ("saving css to _STYLE.css, page template to _TEMPLATE.html, " +
-                    "settings file to _SETTINGS, example file to EXAMPLE.md")
-        with open("_STYLE.css", "w") as f: f.write(_STYLE)
-        with open("_TEMPLATE.html", "w") as f: f.write(_TEMPLATE)
-        with open("_SETTINGS", "w") as f: f.write(_SETTINGS)
-        with open("EXAMPLE.md", "w") as f: f.write(_EXAMPLE)
+        print ("\nsaving:\n-css to _STYLE.css\n-page template to _TEMPLATE.html\n-section template to " +
+                    "_SECTIONTEMPLATE.html\n-settings to _SETTINGS\n-example file to EXAMPLE.md\n\n")
+        with open("_STYLE.css", "w") as f:              f.write(_STYLE)
+        with open("_TEMPLATE.html", "w") as f:          f.write(_TEMPLATE)
+        with open("_SECTIONTEMPLATE.html", "w") as f:   f.write(_SECTIONTEMPLATE)
+        with open("_SETTINGS", "w") as f:               f.write(_SETTINGS)
+        with open("EXAMPLE.md", "w") as f:              f.write(_EXAMPLE)
         sys.exit(0)
 
     mdfiles     = kwargs.get("mdfiles", [])
     no_style    = kwargs.get("no_style", False)
     join        = kwargs.get("join", False)
 
-    style, template, settings = readStyleTemplateSettings()
+    style, template, sectiontemplate, settings = _main_readStyleTemplateSettings()
     if no_style: style = ""
-    builder = PageBuilder(style=style, template=template, settings=settings)
+    builder = PageBuilder(
+                style=style,
+                template=template,
+                sectiontemplate=sectiontemplate,
+                settings=settings
+    )
     files = []
     full_html = ""
     full_meta = {}
@@ -402,9 +469,9 @@ def main(**kwargs):
         print("converting {0} to html (output: {1})".format(fn, fnhtml))
         with open(fnhtml, "w") as f: f.write(html)
 
-    # creating page.html
+    # creating document.html
     if join or 'join' in full_meta or 'jointfilename' in full_meta:
-        html = builder.createHtmlPageFromHtml(full_html, full_meta)
+        html = builder.createHtmlPageFromHtmlAndMeta(full_html, full_meta)
         if "jointfilename" in full_meta: fnhtml = full_meta['jointfilename'].strip()
         else: fnhtml = "document.html"
         print("saving joined html file (output: {0})".format(fnhtml))
@@ -481,31 +548,6 @@ Version v{}
     import sys
     import os
     import argparse
-
-    def readStyleTemplateSettings():
-        """
-        look for style, template and settings files on a number of locations
-        """
-        try:
-            with open("_STYLE.css", "r") as f: style = f.read()
-            print ("reading local _STYLE.css")
-        except FileNotFoundError:
-            style = _STYLE
-
-        try:
-            with open("_TEMPLATE.html", "r") as f: template = f.read()
-            print ("reading local _TEMPLATE.html")
-        except FileNotFoundError:
-            template = _TEMPLATE
-
-        try:
-            with open("_SETTINGS", "r") as f: settings = f.read()
-            print ("reading local _SETTINGS")
-        except FileNotFoundError:
-            settings = ""
-
-        return (style, template, settings)
-
 
     ap = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("mdfiles", nargs="*", help="metamarkdown file(s)")
