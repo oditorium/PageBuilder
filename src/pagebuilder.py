@@ -11,6 +11,9 @@ __version__ = "1.3"
 import metamarkdown as mm
 import markdown as mdwn
 from transformer import contract
+from collections import namedtuple
+import json
+import yaml
 
 
 _TEMPLATE = """
@@ -121,7 +124,21 @@ _META = """
 <meta {field}="{value}">
 """.strip()
 
-_INDEX = """# Index\n{}"""
+_INDEX = """
+# Index
+
+## Aggregate File
+-to come-
+
+## Component Files
+{}
+
+## Meta Data
+- actual [yaml](index.yaml) [json](index.json)
+- raw [yaml](indexr.yaml) [json](indexr.json)
+
+
+"""
 _INDEX_LINE = """- [{0[0]}]({0[2]})"""
 
 
@@ -279,7 +296,7 @@ class PageBuilder():
         """
         creates an entire HtmlPage based on the meta markdown
 
-        :returns:   tuple(html, innerHtml, metaData)
+        :returns:   Namedtuple(html, innerHtml, metaData, metaDataRaw)
         """
         processed = s._processMetaMarkdown(metaMarkdown+s._settings_body)
         metaData = contract([s._settings_meta, processed.meta])
@@ -287,7 +304,8 @@ class PageBuilder():
                     bodyHtml    = processed.html,
                     meta        = metaData,
         )
-        return (html, processed.html, metaData)
+        MMD = namedtuple("mmdData", "pageHtml innerHtml metaData metaDataRaw")
+        return MMD(html, processed.html, metaData, processed.meta)
 
     def __call__(s, *args, **kwargs):
         """
@@ -435,12 +453,21 @@ Version v{}
     files = []
     full_html = ""
     full_meta = {}
+    meta_data_list = []
+    meta_data_raw_list = []
+
     for fn in args.mdfiles:
         fnbase, _ = os.path.splitext(fn)
         fnhtml = fnbase+".html"
         files.append( (fn, fnbase, fnhtml) )
         with open(fn, "r") as f: mmd = f.read()
-        html, inner_html, meta_data = builder(mmd)
+        html, inner_html, meta_data, meta_data_raw = builder(mmd)
+        meta_data['_filename'] = fn
+        meta_data['_filenamebase'] = fnbase
+        meta_data_raw['_filename'] = fn
+        meta_data_raw['_filenamebase'] = fnbase
+        meta_data_list.append(meta_data)
+        meta_data_raw_list.append(meta_data_raw)
         full_html = full_html + inner_html
         full_meta = contract([meta_data, full_meta])
             # this applies the meta data from the right, so oldest entry wins!
@@ -466,3 +493,13 @@ Version v{}
     md = _INDEX.format(md)
     with open("index.html", "w") as f:
         f.write(_TEMPLATE.format(body=mdwn.markdown(md), title="INDEX", style="", metatags=""))
+
+    # saving the meta data
+    FNBASE = "index"
+    print ("saving meta data (output: {0}.yaml, {0}.json, {0}_raw.yaml, {0}_raw.json)".format(FNBASE))
+    with open("{}.yaml".format(FNBASE), "w") as f:
+        f.write(yaml.dump(meta_data_list, default_flow_style=False))
+    with open("{}r.yaml".format(FNBASE), "w") as f:
+        f.write(yaml.dump(meta_data_raw_list, default_flow_style=False))
+    with open("{}.json".format(FNBASE), "w") as f:  f.write(json.dumps(meta_data_list))
+    with open("{}r.json".format(FNBASE), "w") as f: f.write(json.dumps(meta_data_raw_list))
