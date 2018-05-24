@@ -6,7 +6,7 @@ creates a self-contained HTML page from a metamarkdown file
 Licensed under the MIT License
 <https://opensource.org/licenses/MIT>
 """
-__version__ = "1.4"
+__version__ = "1.5"
 
 import metamarkdown as mm
 import markdown as mdwn
