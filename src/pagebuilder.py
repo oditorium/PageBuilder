@@ -316,6 +316,120 @@ class PageBuilder():
 
 pagebuilder = PageBuilder()
 
+#######################################################################
+## MAIN
+
+def main(**kwargs):
+    """
+    actual execution when the module is called from the command line
+
+    all parameters are passed in `kwargs`:
+
+    :mdfiles:           iterable of metamarkdown file names
+    :join:              if true, also generate joint output for html
+    :no_style:          ignore style information
+    :serve:             launch a server (see `port`)
+    :port:              if server is given, that's the port, otherwise ignored
+    :save_templates:    save template files in current directory, then exit
+    """
+
+    if kwargs.get("serve", False):
+        import http.server as hs
+        port = kwargs.get("port", 8000)
+        def run_server(port, bind=None, handler_class=None, server_class=None, protocol=None):
+            """
+            serve the local directory (code from http.server)
+            """
+            if handler_class is None: handler_class = hs.SimpleHTTPRequestHandler
+            if server_class  is None: server_class  = hs.HTTPServer
+            if protocol      is None: protocol      = "HTTP/1.0"
+            if bind          is None: bind          = "127.0.0.1"
+
+            server_address = (bind, port)
+            handler_class.protocol_version = protocol
+            #with server_class(server_address, handler_class) as httpd: # does not work in 3.4
+            httpd = server_class(server_address, handler_class)
+            sa = httpd.socket.getsockname()
+            serve_message = "Serving HTTP on {host} port {port} (http://{host}:{port}/) ..."
+            print(serve_message.format(host=sa[0], port=sa[1]))
+            try:
+                httpd.serve_forever()
+            except KeyboardInterrupt:
+                print("\nKeyboard interrupt received, exiting.")
+                sys.exit(0)
+            #end with
+        run_server(port)
+
+    if kwargs.get("save_templates", False):
+        print ("saving css to _STYLE.css, page template to _TEMPLATE.html, " +
+                    "settings file to _SETTINGS, example file to EXAMPLE.md")
+        with open("_STYLE.css", "w") as f: f.write(_STYLE)
+        with open("_TEMPLATE.html", "w") as f: f.write(_TEMPLATE)
+        with open("_SETTINGS", "w") as f: f.write(_SETTINGS)
+        with open("EXAMPLE.md", "w") as f: f.write(_EXAMPLE)
+        sys.exit(0)
+
+    mdfiles     = kwargs.get("mdfiles", [])
+    no_style    = kwargs.get("no_style", False)
+    join        = kwargs.get("join", False)
+
+    style, template, settings = readStyleTemplateSettings()
+    if no_style: style = ""
+    builder = PageBuilder(style=style, template=template, settings=settings)
+    files = []
+    full_html = ""
+    full_meta = {}
+    meta_data_list = []
+    meta_data_raw_list = []
+
+    for fn in mdfiles:
+        fnbase, _ = os.path.splitext(fn)
+        fnhtml = fnbase+".html"
+        files.append( (fn, fnbase, fnhtml) )
+        with open(fn, "r") as f: mmd = f.read()
+        html, inner_html, meta_data, meta_data_raw = builder(mmd)
+        meta_data['_filename'] = fn
+        meta_data['_filenamebase'] = fnbase
+        meta_data_raw['_filename'] = fn
+        meta_data_raw['_filenamebase'] = fnbase
+        meta_data_list.append(meta_data)
+        meta_data_raw_list.append(meta_data_raw)
+        full_html = full_html + inner_html
+        full_meta = contract([meta_data, full_meta])
+            # this applies the meta data from the right, so oldest entry wins!
+            # (in particular, settings always win!)
+        if "filename" in meta_data: fnhtml = meta_data['filename'].strip()
+        print("converting {0} to html (output: {1})".format(fn, fnhtml))
+        with open(fnhtml, "w") as f: f.write(html)
+
+    # creating page.html
+    if join or 'join' in full_meta or 'jointfilename' in full_meta:
+        html = builder.createHtmlPageFromHtml(full_html, full_meta)
+        if "jointfilename" in full_meta: fnhtml = full_meta['jointfilename'].strip()
+        else: fnhtml = "document.html"
+        print("saving joined html file (output: {0})".format(fnhtml))
+        with open(fnhtml, "w") as f: f.write(html)
+
+    # creating index.html
+    print ("saving index (output: index.html)")
+    md = "\n".join(_INDEX_LINE.format(f) for f in files)
+        # TODO: this is wrong if the file contains the `filename` directive
+        # TODO: this does not link to the joined file
+    md = _INDEX.format(md)
+    with open("index.html", "w") as f:
+        f.write(_TEMPLATE.format(body=mdwn.markdown(md), title="INDEX", style="", metatags=""))
+
+    # saving the meta data
+    FNBASE = "index"
+    print ("saving meta data (output: {0}.yaml, {0}.json, {0}_raw.yaml, {0}_raw.json)".format(FNBASE))
+    with open("{}.yaml".format(FNBASE), "w") as f:
+        f.write(yaml.dump(meta_data_list, default_flow_style=False))
+    with open("{}r.yaml".format(FNBASE), "w") as f:
+        f.write(yaml.dump(meta_data_raw_list, default_flow_style=False))
+    with open("{}.json".format(FNBASE), "w") as f:  f.write(json.dumps(meta_data_list))
+    with open("{}r.json".format(FNBASE), "w") as f: f.write(json.dumps(meta_data_raw_list))
+
+
 
 if __name__ == "__main__":
 
@@ -409,97 +523,20 @@ Version v{}
     #print (args)
 
     if args.serve:
-        import http.server as hs
-        def run_server(port, bind=None, handler_class=None, server_class=None, protocol=None):
-            """
-            serve the local directory (code from http.server)
-            """
-            if handler_class is None: handler_class = hs.SimpleHTTPRequestHandler
-            if server_class  is None: server_class  = hs.HTTPServer
-            if protocol      is None: protocol      = "HTTP/1.0"
-            if bind          is None: bind          = "127.0.0.1"
+        main(serve=True, port=8000)
+        sys.exit(0)
 
-            server_address = (bind, port)
-            handler_class.protocol_version = protocol
-            #with server_class(server_address, handler_class) as httpd: # does not work in 3.4
-            httpd = server_class(server_address, handler_class)
-            sa = httpd.socket.getsockname()
-            serve_message = "Serving HTTP on {host} port {port} (http://{host}:{port}/) ..."
-            print(serve_message.format(host=sa[0], port=sa[1]))
-            try:
-                httpd.serve_forever()
-            except KeyboardInterrupt:
-                print("\nKeyboard interrupt received, exiting.")
-                sys.exit(0)
-            #end with
-        run_server(8000)
 
     if args.version:
         print(__version__)
         sys.exit(0)
 
     if args.save_templates:
-        print ("saving css to _STYLE.css, page template to _TEMPLATE.html, " +
-                    "settings file to _SETTINGS, example file to EXAMPLE.md")
-        with open("_STYLE.css", "w") as f: f.write(_STYLE)
-        with open("_TEMPLATE.html", "w") as f: f.write(_TEMPLATE)
-        with open("_SETTINGS", "w") as f: f.write(_SETTINGS)
-        with open("EXAMPLE.md", "w") as f: f.write(_EXAMPLE)
+        main(save_templates=True, port=8000)
         sys.exit(0)
 
-    style, template, settings = readStyleTemplateSettings()
-    if args.no_style: style = ""
-    builder = PageBuilder(style=style, template=template, settings=settings)
-    files = []
-    full_html = ""
-    full_meta = {}
-    meta_data_list = []
-    meta_data_raw_list = []
-
-    for fn in args.mdfiles:
-        fnbase, _ = os.path.splitext(fn)
-        fnhtml = fnbase+".html"
-        files.append( (fn, fnbase, fnhtml) )
-        with open(fn, "r") as f: mmd = f.read()
-        html, inner_html, meta_data, meta_data_raw = builder(mmd)
-        meta_data['_filename'] = fn
-        meta_data['_filenamebase'] = fnbase
-        meta_data_raw['_filename'] = fn
-        meta_data_raw['_filenamebase'] = fnbase
-        meta_data_list.append(meta_data)
-        meta_data_raw_list.append(meta_data_raw)
-        full_html = full_html + inner_html
-        full_meta = contract([meta_data, full_meta])
-            # this applies the meta data from the right, so oldest entry wins!
-            # (in particular, settings always win!)
-        if "filename" in meta_data: fnhtml = meta_data['filename'].strip()
-        print("converting {0} to html (output: {1})".format(fn, fnhtml))
-        with open(fnhtml, "w") as f: f.write(html)
-
-    # creating page.html
-    if args.join or 'join' in full_meta or 'jointfilename' in full_meta:
-        html = builder.createHtmlPageFromHtml(full_html, full_meta)
-        if "jointfilename" in full_meta: fnhtml = full_meta['jointfilename'].strip()
-        else: fnhtml = "document.html"
-        print("saving joined html file (output: {0})".format(fnhtml))
-        with open(fnhtml, "w") as f: f.write(html)
-
-
-    # creating index.html
-    print ("saving index (output: index.html)")
-    md = "\n".join(_INDEX_LINE.format(f) for f in files)
-        # TODO: this is wrong if the file contains the `filename` directive
-        # TODO: this does not link to the joined file
-    md = _INDEX.format(md)
-    with open("index.html", "w") as f:
-        f.write(_TEMPLATE.format(body=mdwn.markdown(md), title="INDEX", style="", metatags=""))
-
-    # saving the meta data
-    FNBASE = "index"
-    print ("saving meta data (output: {0}.yaml, {0}.json, {0}_raw.yaml, {0}_raw.json)".format(FNBASE))
-    with open("{}.yaml".format(FNBASE), "w") as f:
-        f.write(yaml.dump(meta_data_list, default_flow_style=False))
-    with open("{}r.yaml".format(FNBASE), "w") as f:
-        f.write(yaml.dump(meta_data_raw_list, default_flow_style=False))
-    with open("{}.json".format(FNBASE), "w") as f:  f.write(json.dumps(meta_data_list))
-    with open("{}r.json".format(FNBASE), "w") as f: f.write(json.dumps(meta_data_raw_list))
+    main(
+        mdfiles     = args.mdfiles,
+        join        = args.join,
+        no_style    = args.no_style,
+    )
