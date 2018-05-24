@@ -35,7 +35,7 @@ USAGE
 Licensed under the MIT License
 <https://opensource.org/licenses/MIT>
 """
-__version__ = "0.2"
+__version__ = "0.2.1"
 
 
 import re
@@ -347,12 +347,13 @@ class Parser():
 
     ######################################################################
     ## PARSE
-    def parse (s, doc, fieldParsers=None):
+    def parse (s, doc, fieldParsers=None, createHtml=True):
         """
         parses a meta-markdown document (starts with rst-like meta data, then markdown)
 
         :doc:               the meta-markdown document
         :fieldParsers:      dict fieldName: fieldParser
+        :createHtml:        if True (default), create html from markdown
         :returns:           the function returns a SimpleNamespace where the meta fields
                             are in `.meta` and the raw body is in `.body`. If html is
                             created this is in `.html`
@@ -397,18 +398,16 @@ class Parser():
             # file must be scanned twice...
 
         # convert the markdown to html (if desired)
-        if s.createHtml:
+        if s.createHtml and createHtml:
             html = mdwn.markdown(body)
-            return SimpleNamespace(
-                meta        = meta,
-                body        = body,
-                html        = html,
-            )
+        else:
+            html = None
 
         return SimpleNamespace(
-                meta        = meta,
-                body        = body,
-            )
+            meta        = meta,
+            body        = body,
+            html        = html,
+        )
 
 
     ######################################################################
