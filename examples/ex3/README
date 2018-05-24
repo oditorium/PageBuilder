@@ -1,4 +1,4 @@
-# Example 2 -- Collection of Files
+# Example 3 -- Using a Section Template
 
 ## Usage
 
@@ -12,6 +12,12 @@ This is an example for converting files into a a single html file: when
 running the `convert` command,  the all files in the directory are converted
 into a single file called  `document.html` (as will as into individual
 files).
+
+This example in particular shows how to use section templates, where meta
+data from the section files can be included via the section template in a
+non-trivial manner. See also how fields can be passed through a filter
+before being displayed, eg the content of a markdown field :foo|md: can be
+accessed as html in the template as `{foo}`.
 
 Additionally a convenience file `index.html` is created that links to all
 generated files, in the order in which they appeared on the command line.

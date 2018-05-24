@@ -1,4 +1,4 @@
-# Example 1 -- Indepedent Files
+# Example 1 -- Independent Files
 
 ## Usage
 
@@ -8,11 +8,9 @@
 
 ## Description
 
-This is an example for converting a files one-by-one: when
-running the `convert` command,  the files `test1.md` and
-`test2.md` are converted to `test1.html` and `test2.html`
-respectively.
+This is an example for converting a files one-by-one: when running the
+`convert` command,  the files `test1.md` and `test2.md` are converted to
+`test1.html` and `test2.html` respectively.
 
-Additionally a convenience file `index.html` is created
-that links to all generated files, in the order in which
-they appeared on the command line.
+Additionally a convenience file `index.html` is created that links to all
+generated files, in the order in which they appeared on the command line.

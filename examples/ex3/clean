@@ -1,0 +1,5 @@
+rm 0*.html
+rm 1*.html
+rm 2*.html
+rm *.json
+rm *.yaml
