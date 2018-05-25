@@ -5,6 +5,8 @@ __pycache__/
 *$py.class
 
 *.html
+*.json
+*.yaml
 
 # C extensions
 *.so
