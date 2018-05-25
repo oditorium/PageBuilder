@@ -1,0 +1,12 @@
+# Example 4 -- Section Template Tips and Tricks
+
+## Usage
+
+- run `convert` to convert the files
+- run `serve` to serve the current directory
+- run `clean` to remove generated files
+
+## Description
+
+This example deals with special fields in a file using a section template
+(see example 3 first).

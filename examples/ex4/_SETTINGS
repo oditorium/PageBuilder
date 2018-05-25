@@ -1,0 +1,10 @@
+// set default values for missing fields
+// (without this if a field is missing the conversion will fail)
+
+:title:                 -
+:textfield:             -
+:mdfield:               -
+:mdfield2:              -
+:prefield:              -
+:divfield:              -
+:divfield2:             -
