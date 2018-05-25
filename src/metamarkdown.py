@@ -35,7 +35,7 @@ USAGE
 Licensed under the MIT License
 <https://opensource.org/licenses/MIT>
 """
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 
 import re
@@ -288,7 +288,7 @@ class Parser():
             if not _starts_with_space(line):
 
                 # yes: check whether it is start of a tag
-                m = re.match("^(:[a-zA-Z0-9]*:)", line)
+                m = re.match("^(:[a-zA-Z0-9_|]*:)", line)
                 if m:
 
                     # yes: remember index
