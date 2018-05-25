@@ -95,6 +95,9 @@ pre {{
     background-color: #eee;
     font-size: 75%;
 }}
+table.section {{border-collapse: separate; width: 90%; border-spacing: 10px; }}
+table.section td, table.section th {{font-size: 120%; text-align: left; }}
+table.section td{{padding-left: 20px; border-left: 5px solid #ccc; }}
 """.strip()
 
 _SETTINGS = """
@@ -211,6 +214,7 @@ class PageBuilder():
         """
         return s._parse(md, createHtml=createHtml)
 
+
     def _process_template(s, template_name, specific_params=None):
         """
         processes template strings eg for the page template or style
@@ -282,7 +286,13 @@ class PageBuilder():
 
         :params:    keyword arguments corresponding to the fields the
                     template expect to be filled from the file data
+                    (the params dict is modified, see below)
         :returns:   the section html
+
+        The function applies filters to the parameters, depending on their
+        names. For example, a parameter called "desc|md" (or :desc|md:
+        in the mmd field) would be run through a markdown filter with the
+        result being stored in params['desc']
         """
         sectionTemplateName = params.get("sectiontemplate", "sectiontemplate").strip()
             # the files can define another section template name that can be
@@ -291,6 +301,23 @@ class PageBuilder():
             # useful choices are "sectiontemplate" (which is the template
             # from the _SECTIONTEMPLATE.html file) and "cleantemplate" which
             # is the default template that renders the body only
+
+        params1 = {}
+        for k,v in params.items():
+
+            if k[-3:] == "|md":
+                params1[k[0:-3]] = \
+                    "<div class='ff ff-md ff-{1}'>{0}</div>".format(mm.parse_markdown(v),k[0:-3])
+
+            elif k[-4:] == "|pre":
+                params1[k[0:-4]] = \
+                    "<pre class='ff ff-pre ff-{1}'>{0}</pre>".format(v, k[0:-4])
+
+            elif k[-4:] == "|div":
+                params1[k[0:-4]] = \
+                    "<div class='ff ff-div ff-{1}'>{0}</div>".format(v, k[0:-4])
+
+        params.update(params1)
         return s._process_template(sectionTemplateName, params)
 
     def createHtmlPageFromHtmlAndMeta(s, bodyHtml, meta=None):
@@ -564,14 +591,15 @@ Version v{}
     args = ap.parse_args()
     #print (args)
 
+    print("Version ", __version__)
+    if args.version: sys.exit(0)
+
     if args.serve:
         main(serve=True, port=8000)
         sys.exit(0)
 
 
-    if args.version:
-        print(__version__)
-        sys.exit(0)
+
 
     if args.save_templates:
         main(save_templates=True, port=8000)
