@@ -369,10 +369,16 @@ class PageBuilder():
 
 pagebuilder = PageBuilder()
 
+
+
 #######################################################################
-## MAIN
+## PAGE BUILDER MAIN
 
 import http.server as hs
+import sys
+import os
+import argparse
+
 
 class PageBuilderMain():
     """
@@ -392,6 +398,72 @@ class PageBuilderMain():
     FNTEMPLATE          = "_TEMPLATE.html"
     FNSECTIONTEMPLATE   = "_SECTIONTEMPLATE.html"
     FNEXAMPLE           = "EXAMPLE.md"
+
+    DESCRIPTION = """
+---------------------------------------
+Convert (meta)markdown to html
+---------------------------------------
+
+Metamarkdown is like Markdown, except that the preamble of the file
+can contain rst-like metadata, ie lines of the form
+
+    :fieldname:         field value
+
+and the converter algorithm uses those fields to control the outputs.
+Also there are a few extra markdown filters, for example `--` is
+converted to an em-dash. and `//` indicates a comment.
+
+The executable looks for three special files in the directory, notably
+
+- _TEMPLATE.html    -- the base template used
+- _STYLE.css        -- style information
+- _SETTINGS         -- a settings file (meta markdown format)
+
+Example files can be generated using the `--save-templates` flag
+(attention: files already present are overwritten without warning).
+
+The settings file is prepended to each of the executed files, both in
+terms of meta data and in terms of text (the latter is mostly useful
+for link references). Meta data in the files intelligently overwrites
+meta data from the templates. For example, the meta field `:meta:`
+generates meta tags in the html. If we have in the settings file
+
+    :meta:          field0 := value0, field1 := value0
+
+and in the processed file
+
+    :meta:          field1 := value1, field2 := value1
+
+then the meta tags generated are
+
+    <meta field0="value0">
+    <meta field1="value1">
+    <meta field2="value1">
+
+---
+Version v{}
+""".format(__version__)
+
+    def parseArgs(s):
+        """
+        read command line arguments using arg parse
+
+        :returns:       the result of `argparse.parse_args()`
+        """
+        ap = argparse.ArgumentParser(description=s.DESCRIPTION, formatter_class=argparse.RawTextHelpFormatter)
+        ap.add_argument("mdfiles", nargs="*", help="metamarkdown file(s)")
+        ap.add_argument("--save-templates", "-t", action="store_true", default=False,
+                help="save the style and template files locally and exit")
+        ap.add_argument("--no-style", action="store_true", default=False,
+                help="do not include style information into the html output")
+        ap.add_argument("--join", "-j", action="store_true", default=False,
+                help="create joined up file of all the input files")
+        ap.add_argument("--serve", action="store_true", default=False,
+                help="run an http server (port 8314) on the current location")
+        ap.add_argument("--version", "-v", action="store_true", default=False,
+                help="print version number")
+        return ap.parse_args()
+
 
 
     def readStyleTemplateSettings(s):
@@ -555,74 +627,16 @@ class PageBuilderMain():
         with open("{}r.json".format(FNBASE), "w") as f: f.write(json.dumps(meta_data_raw_list))
 
 
+#######################################################################
+## PAGE BUILDER MAIN
+
 
 if __name__ == "__main__":
 
     # TODO: move more of this into the handler class
 
-    description = """
----------------------------------------
-Convert (meta)markdown to html
----------------------------------------
-
-Metamarkdown is like Markdown, except that the preamble of the file
-can contain rst-like metadata, ie lines of the form
-
-    :fieldname:         field value
-
-and the converter algorithm uses those fields to control the outputs.
-Also there are a few extra markdown filters, for example `--` is
-converted to an em-dash. and `//` indicates a comment.
-
-The executable looks for three special files in the directory, notably
-
-- _TEMPLATE.html    -- the base template used
-- _STYLE.css        -- style information
-- _SETTINGS         -- a settings file (meta markdown format)
-
-Example files can be generated using the `--save-templates` flag
-(attention: files already present are overwritten without warning).
-
-The settings file is prepended to each of the executed files, both in
-terms of meta data and in terms of text (the latter is mostly useful
-for link references). Meta data in the files intelligently overwrites
-meta data from the templates. For example, the meta field `:meta:`
-generates meta tags in the html. If we have in the settings file
-
-    :meta:          field0 := value0, field1 := value0
-
-and in the processed file
-
-    :meta:          field1 := value1, field2 := value1
-
-then the meta tags generated are
-
-    <meta field0="value0">
-    <meta field1="value1">
-    <meta field2="value1">
-
----
-Version v{}
-""".format(__version__)
-
-    import sys
-    import os
-    import argparse
-
-    ap = argparse.ArgumentParser(description=description, formatter_class=argparse.RawTextHelpFormatter)
-    ap.add_argument("mdfiles", nargs="*", help="metamarkdown file(s)")
-    ap.add_argument("--save-templates", "-t", action="store_true", default=False,
-            help="save the style and template files locally and exit")
-    ap.add_argument("--no-style", action="store_true", default=False,
-            help="do not include style information into the html output")
-    ap.add_argument("--join", "-j", action="store_true", default=False,
-            help="create joined up file of all the input files")
-    ap.add_argument("--serve", action="store_true", default=False,
-            help="run an http server (port 8314) on the current location")
-    ap.add_argument("--version", "-v", action="store_true", default=False,
-            help="print version number")
-    args = ap.parse_args()
-    #print (args)
+    main = PageBuilderMain()
+    args = main.parseArgs()
 
     print("Version ", __version__)
     if args.version: sys.exit(0)
@@ -632,10 +646,10 @@ Version v{}
         sys.exit(0)
 
     if args.save_templates:
-        PageBuilderMain().main(save_templates=True, port=8000)
+        main.main(save_templates=True, port=8000)
         sys.exit(0)
 
-    PageBuilderMain().main(
+    main.main(
         mdfiles     = args.mdfiles,
         join        = args.join,
         no_style    = args.no_style,
