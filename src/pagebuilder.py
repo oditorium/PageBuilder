@@ -550,46 +550,20 @@ Version v{}
         with open(s.FNSETTINGS, "w") as f:          f.write(s.SETTINGS)
         with open(s.FNEXAMPLE, "w") as f:           f.write(s.EXAMPLE)
 
-    def run(s, **kwargs):
+
+    def readAndprocessInputFiles(s, mdfiles, builder, save=True):
         """
-        actual execution when the module is called from the command line
+        reads and processes all mmd input files, saves individual outputs
 
-        all parameters are passed in `kwargs`:
-
-        :mdfiles:           iterable of metamarkdown file names
-        :join:              if true, also generate joint output for html
-        :no_style:          ignore style information
-        :serve:             launch a server (see `port`)
-        :port:              if server is given, that's the port, otherwise ignored
-        :save_templates:    save template files in current directory, then exit
-
-        NOTE: the split between `main` and `run` is that (a) `run` does not
-        know about command line args, and (b) there is no non-trivial code
-        in main. This allows to reuse the object in a non-command-line
-        context.
+        :mdfiles:       list of filenames for the meta markdown files
+        :builder:       the builder object
+        :save:          if True (default), save generated files
+        :returns:       tuple(files, fullMeta, meta, metaRaw)
+        :files:         list of filename tuples (filename, base_filename, html_filename)
+        :fullMeta:      the aggregate meta data dict
+        :meta:          individual meta data (after aggreation with settings)
+        :metaRaw:       individual meta data (before aggreation with settings)
         """
-
-        if kwargs.get("serve", False):
-            port = kwargs.get("port", 8000)
-            s.runServer(port)
-            sys.exit(0)
-
-        if kwargs.get("save_templates", False):
-            s.saveTemplates()
-            sys.exit(0)
-
-        mdfiles     = kwargs.get("mdfiles", [])
-        no_style    = kwargs.get("no_style", False)
-        join        = kwargs.get("join", False)
-
-        style, template, sectiontemplate, settings = s.readStyleTemplateSettings()
-        if no_style: style = ""
-        builder = PageBuilder(
-                    style=style,
-                    template=template,
-                    sectiontemplate=sectiontemplate,
-                    settings=settings
-        )
         files = []
         full_html = ""
         full_meta = {}
@@ -614,7 +588,53 @@ Version v{}
                 # (in particular, settings always win!)
             if "filename" in meta_data: fnhtml = meta_data['filename'].strip()
             print("converting {0} to html (output: {1})".format(fn, fnhtml))
-            with open(fnhtml, "w") as f: f.write(html)
+            if save:
+                with open(fnhtml, "w") as f: f.write(html)
+
+        return (files, full_meta, meta_data_list, meta_data_raw_list)
+
+    def run(s, **kwargs):
+        """
+        actual execution when the module is called from the command line
+
+        all parameters are passed in `kwargs`:
+
+        :mdfiles:           iterable of metamarkdown file names
+        :join:              if true, also generate joint output for html
+        :no_style:          ignore style information
+        :serve:             launch a server (see `port`)
+        :port:              if server is given, that's the port, otherwise ignored
+        :save_templates:    save template files in current directory, then exit
+
+        NOTE: the split between `main` and `run` is that (a) `run` does not
+        know about command line args, and (b) there is no non-trivial code
+        in main. This allows to reuse the object in a non-command-line
+        context.
+        """
+        if kwargs.get("serve", False):
+            port = kwargs.get("port", 8000)
+            s.runServer(port)
+            sys.exit(0)
+
+        if kwargs.get("save_templates", False):
+            s.saveTemplates()
+            sys.exit(0)
+
+        mdfiles     = kwargs.get("mdfiles", [])
+        no_style    = kwargs.get("no_style", False)
+        join        = kwargs.get("join", False)
+
+        style, template, sectiontemplate, settings = s.readStyleTemplateSettings()
+        if no_style: style = ""
+        builder = PageBuilder(
+                    style=style,
+                    template=template,
+                    sectiontemplate=sectiontemplate,
+                    settings=settings
+        )
+
+        files, full_meta, meta_data_list, meta_data_raw_list = \
+                        s.readAndprocessInputFiles(mdfiles, builder)
 
         # creating document.html
         if join or 'join' in full_meta or 'jointfilename' in full_meta:
