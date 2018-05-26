@@ -449,11 +449,28 @@ then the meta tags generated are
 Version v{}
 """.format(__version__)
 
-    def parseArgs(s):
+    def setupArgParse(s):
         """
-        read command line arguments using arg parse
+        sets up argparse
 
-        :returns:       the result of `argparse.parse_args()`
+        :returns:       the `argparse` module
+
+        USAGE
+
+        Simple usage
+
+            args = s.setupArgParse().parse_args()
+
+
+        Advanced usage
+
+            ap = s.setupArgParse()
+            ap.add_argument(...)
+            ...
+            args = ap.parse_args()
+
+
+
         """
         ap = argparse.ArgumentParser(description=s.DESCRIPTION, formatter_class=argparse.RawTextHelpFormatter)
         ap.add_argument("mdfiles", nargs="*", help="metamarkdown file(s)")
@@ -467,8 +484,8 @@ Version v{}
                 help="run an http server (port 8314) on the current location")
         ap.add_argument("--version", "-v", action="store_true", default=False,
                 help="print version number")
-        return ap.parse_args()
 
+        return ap
 
 
     def readStyleTemplateSettings(s):
@@ -743,7 +760,7 @@ Version v{}
         context.
         """
 
-        args = s.parseArgs()
+        args = s.setupArgParse().parse_args()
 
         print("Version ", __version__)
         if args.version: sys.exit(0)
