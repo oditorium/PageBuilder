@@ -551,22 +551,24 @@ Version v{}
         with open(s.FNEXAMPLE, "w") as f:           f.write(s.EXAMPLE)
 
 
-    def readAndprocessInputFiles(s, mdfiles, builder, save=True):
+    def readAndProcessInputFiles(s, mdfiles, builder, save=True):
         """
         reads and processes all mmd input files, saves individual outputs
 
         :mdfiles:       list of filenames for the meta markdown files
         :builder:       the builder object
         :save:          if True (default), save generated files
-        :returns:       tuple(files, fullMeta, meta, metaRaw)
+        :returns:       tuple(files, html, meta, metaRaw, fullMeta)
         :files:         list of filename tuples (filename, base_filename, html_filename)
-        :fullMeta:      the aggregate meta data dict
+        :html:          list of inner html segments per file
         :meta:          individual meta data (after aggreation with settings)
         :metaRaw:       individual meta data (before aggreation with settings)
+        :fullMeta:      the aggregate meta data dict
         """
         files = []
         full_html = ""
         full_meta = {}
+        html_list = []
         meta_data_list = []
         meta_data_raw_list = []
 
@@ -576,22 +578,44 @@ Version v{}
             files.append( (fn, fnbase, fnhtml) )
             with open(fn, "r") as f: mmd = f.read()
             html, inner_html, meta_data, meta_data_raw = builder(mmd)
+            html_list.append(inner_html)
             meta_data['_filename'] = fn
             meta_data['_filenamebase'] = fnbase
             meta_data_raw['_filename'] = fn
             meta_data_raw['_filenamebase'] = fnbase
             meta_data_list.append(meta_data)
             meta_data_raw_list.append(meta_data_raw)
-            full_html = full_html + inner_html
             full_meta = contract([meta_data, full_meta])
                 # this applies the meta data from the right, so oldest entry wins!
                 # (in particular, settings always win!)
             if "filename" in meta_data: fnhtml = meta_data['filename'].strip()
-            print("converting {0} to html (output: {1})".format(fn, fnhtml))
             if save:
+                print("converting {0} to html (output: {1})".format(fn, fnhtml))
                 with open(fnhtml, "w") as f: f.write(html)
 
-        return (files, full_meta, meta_data_list, meta_data_raw_list)
+        return (files, html_list, meta_data_list, meta_data_raw_list, full_meta)
+
+    def createJointDocument(s, builder, htmlList, meta, save=True):
+        """
+        creates the joint document, concatenating the html and meta from all files
+
+        :html:          list of inner html per file
+        :builder:       the builder object
+        :meta:          the aggregate meta data of all files
+        :save:          if True (default), save generated files
+        :returns:       tuple(html)
+        :html:          the entire-document html
+        """
+        full_html = "\n".join(htmlList)
+        html = builder.createHtmlPageFromHtmlAndMeta(full_html, meta)
+        if "jointfilename" in meta: fnhtml = meta['jointfilename'].strip()
+        else: fnhtml = "document.html"
+
+        if save:
+            print("saving joined html file (output: {0})".format(fnhtml))
+            with open(fnhtml, "w") as f: f.write(html)
+
+        return (html,)
 
     def run(s, **kwargs):
         """
@@ -633,16 +657,12 @@ Version v{}
                     settings=settings
         )
 
-        files, full_meta, meta_data_list, meta_data_raw_list = \
-                        s.readAndprocessInputFiles(mdfiles, builder)
+        files, html_list, meta_data_list, meta_data_raw_list, full_meta = \
+                                    s.readAndProcessInputFiles(mdfiles, builder)
 
-        # creating document.html
         if join or 'join' in full_meta or 'jointfilename' in full_meta:
-            html = builder.createHtmlPageFromHtmlAndMeta(full_html, full_meta)
-            if "jointfilename" in full_meta: fnhtml = full_meta['jointfilename'].strip()
-            else: fnhtml = "document.html"
-            print("saving joined html file (output: {0})".format(fnhtml))
-            with open(fnhtml, "w") as f: f.write(html)
+            document_html = s.createJointDocument(builder, html_list, full_meta)
+
 
         # creating index.html
         print ("saving index (output: index.html)")
