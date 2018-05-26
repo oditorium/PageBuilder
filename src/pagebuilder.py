@@ -139,15 +139,15 @@ settings mean those files are generated. Also, currently this file assumes
 default file names and will not pick up changes eg with the `:jointfilename:`
 tag_
 
-## Aggregate File
-- [document](document.html)
+## Aggregate Files
+- joint document [document](document.html)
+- composite meta data [yaml](document.yaml) [json](document.json)
+- raw meta data [yaml](document.r.yaml) [json](document.r.json)
 
 ## Component Files
 {}
 
-## Meta Data
-- actual [yaml](index.yaml) [json](index.json)
-- raw [yaml](indexr.yaml) [json](indexr.json)
+
 
 
 """
@@ -628,16 +628,16 @@ Version v{}
             f.write(s.TEMPLATE.format(body=mdwn.markdown(md), title="INDEX", style="", metatags=""))
 
         # saving the meta data
-        FNBASE = "index"
+        FNBASE = "document"
             # TODO: is index really the right name?
             # TODO: link output to flags
         print ("saving meta data (output: {0}.yaml, {0}.json, {0}_raw.yaml, {0}_raw.json)".format(FNBASE))
         with open("{}.yaml".format(FNBASE), "w") as f:
             f.write(yaml.dump(meta_data_list, default_flow_style=False))
-        with open("{}r.yaml".format(FNBASE), "w") as f:
+        with open("{}.r.yaml".format(FNBASE), "w") as f:
             f.write(yaml.dump(meta_data_raw_list, default_flow_style=False))
         with open("{}.json".format(FNBASE), "w") as f:  f.write(json.dumps(meta_data_list))
-        with open("{}r.json".format(FNBASE), "w") as f: f.write(json.dumps(meta_data_raw_list))
+        with open("{}.r.json".format(FNBASE), "w") as f: f.write(json.dumps(meta_data_raw_list))
 
 
     def main(s):
