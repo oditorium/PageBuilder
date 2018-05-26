@@ -642,6 +642,40 @@ Version v{}
 
         return (html,)
 
+    def saveMetaData(s, meta, metaRaw, saveYAML=True, saveJSON=True, saveAggr=True, saveRaw=True):
+        """
+        saves the list meta data in YAML and/or JSON format
+
+        :meta:          list of aggregate meta data (including settings)
+        :metaRaw:       list of raw meta data (excluding settings)
+        :saveYAML:      save as YAML
+        :saveJSON:      save as JSON
+        :saveAggr:      save aggregated list
+        :saveRaw:       save raw list
+        """
+        FNBASE = "document"
+            # TODO: link output to flags
+
+        if saveYAML:
+            if saveAggr:
+                print ("saving aggregate meta data (output: {0}.yaml)".format(FNBASE))
+                with open("{}.yaml".format(FNBASE), "w") as f:
+                    f.write(yaml.dump(meta, default_flow_style=False))
+            if saveRaw:
+                print ("saving raw meta data (output: {0}.r.yaml)".format(FNBASE))
+                with open("{}.r.yaml".format(FNBASE), "w") as f:
+                    f.write(yaml.dump(metaRaw, default_flow_style=False))
+
+        if saveJSON:
+            if saveAggr:
+                print ("saving aggregate meta data (output: {0}.json)".format(FNBASE))
+                with open("{}.json".format(FNBASE), "w") as f:
+                    f.write(json.dumps(meta))
+            if saveRaw:
+                print ("saving raw meta data (output: {0}.r.json)".format(FNBASE))
+                with open("{}.r.json".format(FNBASE), "w") as f:
+                    f.write(json.dumps(metaRaw))
+
     def run(s, **kwargs):
         """
         actual execution when the module is called from the command line
@@ -690,19 +724,8 @@ Version v{}
 
         index_html, = s.createIndexHtml(files)
 
-
-
-        # saving the meta data
-        FNBASE = "document"
-            # TODO: is index really the right name?
-            # TODO: link output to flags
-        print ("saving meta data (output: {0}.yaml, {0}.json, {0}_raw.yaml, {0}_raw.json)".format(FNBASE))
-        with open("{}.yaml".format(FNBASE), "w") as f:
-            f.write(yaml.dump(meta_data_list, default_flow_style=False))
-        with open("{}.r.yaml".format(FNBASE), "w") as f:
-            f.write(yaml.dump(meta_data_raw_list, default_flow_style=False))
-        with open("{}.json".format(FNBASE), "w") as f:  f.write(json.dumps(meta_data_list))
-        with open("{}.r.json".format(FNBASE), "w") as f: f.write(json.dumps(meta_data_raw_list))
+        s.saveMetaData(meta_data_list, meta_data_raw_list,
+            saveYAML=True, saveJSON=True, saveAggr=True, saveRaw=False)
 
 
     def main(s):
