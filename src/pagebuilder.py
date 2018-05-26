@@ -505,7 +505,7 @@ Version v{}
 
     def runServer(s, port, bind=None, handler=None, server=None, protocol=None):
         """
-        serve the local directory
+        serve the local directory (called by `run`)
 
         :port:          at which port to serve
         :bind:          IP address to bind (typically 127.0.0.1 or 0.0.0.0)
@@ -534,6 +534,22 @@ Version v{}
             return
         #end with
 
+    def saveTemplates(s):
+        """
+        saves the templates to the local director (called by `run`)
+        """
+        print ("Saving templates:")
+        print ("Style               =>", s.FNSTYLE)
+        print ("Template            =>", s.FNTEMPLATE)
+        print ("Section Template    =>", s.FNSECTIONTEMPLATE)
+        print ("Settings            =>", s.FNSETTINGS)
+        print ("Example             =>", s.FNEXAMPLE)
+        with open(s.FNSTYLE, "w") as f:             f.write(s.STYLE)
+        with open(s.FNTEMPLATE, "w") as f:          f.write(s.TEMPLATE)
+        with open(s.FNSECTIONTEMPLATE, "w") as f:   f.write(s.SECTIONTEMPLATE)
+        with open(s.FNSETTINGS, "w") as f:          f.write(s.SETTINGS)
+        with open(s.FNEXAMPLE, "w") as f:           f.write(s.EXAMPLE)
+
     def run(s, **kwargs):
         """
         actual execution when the module is called from the command line
@@ -559,17 +575,7 @@ Version v{}
             sys.exit(0)
 
         if kwargs.get("save_templates", False):
-            print ("Saving templates:")
-            print ("Style               =>", s.FNSTYLE)
-            print ("Template            =>", s.FNTEMPLATE)
-            print ("Section Template    =>", s.FNSECTIONTEMPLATE)
-            print ("Settings            =>", s.FNSETTINGS)
-            print ("Example             =>", s.FNEXAMPLE)
-            with open(s.FNSTYLE, "w") as f:             f.write(s.STYLE)
-            with open(s.FNTEMPLATE, "w") as f:          f.write(s.TEMPLATE)
-            with open(s.FNSECTIONTEMPLATE, "w") as f:   f.write(s.SECTIONTEMPLATE)
-            with open(s.FNSETTINGS, "w") as f:          f.write(s.SETTINGS)
-            with open(s.FNEXAMPLE, "w") as f:           f.write(s.EXAMPLE)
+            s.saveTemplates()
             sys.exit(0)
 
         mdfiles     = kwargs.get("mdfiles", [])
