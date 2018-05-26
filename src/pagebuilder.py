@@ -527,7 +527,7 @@ Version v{}
             sys.exit(0)
         #end with
 
-    def main(s, **kwargs):
+    def run(s, **kwargs):
         """
         actual execution when the module is called from the command line
 
@@ -627,30 +627,40 @@ Version v{}
         with open("{}r.json".format(FNBASE), "w") as f: f.write(json.dumps(meta_data_raw_list))
 
 
+    def main(s):
+        """
+        the main execution entry point
+
+        USAGE
+
+            if __name__ == "__main__":
+                PageBuilderMain().main()
+        """
+
+        args = s.parseArgs()
+
+        print("Version ", __version__)
+        if args.version: sys.exit(0)
+
+        if args.serve:
+            s.run(serve=True, port=8000)
+            sys.exit(0)
+
+        if args.save_templates:
+            s.run(save_templates=True, port=8000)
+            sys.exit(0)
+
+        s.run(
+            mdfiles     = args.mdfiles,
+            join        = args.join,
+            no_style    = args.no_style,
+        )
+
+
+
 #######################################################################
-## PAGE BUILDER MAIN
+## MAIN
 
 
 if __name__ == "__main__":
-
-    # TODO: move more of this into the handler class
-
-    main = PageBuilderMain()
-    args = main.parseArgs()
-
-    print("Version ", __version__)
-    if args.version: sys.exit(0)
-
-    if args.serve:
-        main(serve=True, port=8000)
-        sys.exit(0)
-
-    if args.save_templates:
-        main.main(save_templates=True, port=8000)
-        sys.exit(0)
-
-    main.main(
-        mdfiles     = args.mdfiles,
-        join        = args.join,
-        no_style    = args.no_style,
-    )
+    PageBuilderMain().main()
