@@ -602,7 +602,7 @@ Version v{}
         :html:          list of inner html per file
         :builder:       the builder object
         :meta:          the aggregate meta data of all files
-        :save:          if True (default), save generated files
+        :save:          if True (default), save generated file
         :returns:       tuple(html)
         :html:          the entire-document html
         """
@@ -614,6 +614,31 @@ Version v{}
         if save:
             print("saving joined html file (output: {0})".format(fnhtml))
             with open(fnhtml, "w") as f: f.write(html)
+
+        return (html,)
+
+    def createIndexHtml(s, files, save=True):
+        """
+        creates the index file
+
+        :files:         the list of file tuples
+        :save:          if True (default), save generated files
+
+        :returns:       tuple(html)
+        :html:          the html of the index file
+        """
+        md = "\n".join(s.INDEXLINE.format(f) for f in files)
+            # TODO: this is wrong if the file contains the `filename` directive
+            # TODO: this does not link to the joined file
+        md = _INDEX.format(md)
+        html = s.TEMPLATE.format(
+                    body=mdwn.markdown(md),
+                    title="INDEX",
+                    style="", metatags=""
+        )
+        if save:
+            print ("saving index (output: index.html)")
+            with open("index.html", "w") as f: f.write(html)
 
         return (html,)
 
@@ -661,17 +686,11 @@ Version v{}
                                     s.readAndProcessInputFiles(mdfiles, builder)
 
         if join or 'join' in full_meta or 'jointfilename' in full_meta:
-            document_html = s.createJointDocument(builder, html_list, full_meta)
+            document_html, = s.createJointDocument(builder, html_list, full_meta)
+
+        index_html, = s.createIndexHtml(files)
 
 
-        # creating index.html
-        print ("saving index (output: index.html)")
-        md = "\n".join(s.INDEXLINE.format(f) for f in files)
-            # TODO: this is wrong if the file contains the `filename` directive
-            # TODO: this does not link to the joined file
-        md = _INDEX.format(md)
-        with open("index.html", "w") as f:
-            f.write(s.TEMPLATE.format(body=mdwn.markdown(md), title="INDEX", style="", metatags=""))
 
         # saving the meta data
         FNBASE = "document"
