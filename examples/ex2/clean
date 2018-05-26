@@ -1,3 +1,5 @@
-rm *.html
-rm *.json
-rm *.yaml
+rm index*.*
+rm document*.*
+rm 0*.html
+rm 1*.html
+rm 2*.html
