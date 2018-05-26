@@ -387,7 +387,24 @@ import argparse
 
 class PageBuilderMain():
     """
-    wrapper around data and functions that for the PageBuilder object
+    wrapper around data and functions for the PageBuilder object
+
+    :main:          entry point that can be called directly in a python shell script
+    :run:           entry point that expects all parameters in kwargs
+
+    USAGE
+
+    in a python module, reading arguments from argparse
+
+        if __name__ == "__main__":
+            PageBuilderMain().main()
+
+    from other python code, getting arguments from parameters
+
+        params = ...
+        PageBuilderMain().run(**params)
+
+
     """
 
     STYLE               = _STYLE
@@ -714,11 +731,11 @@ Version v{}
         if kwargs.get("serve", False):
             port = kwargs.get("port", 8000)
             s.runServer(port)
-            sys.exit(0)
+            return
 
         if kwargs.get("save_templates", False):
             s.saveTemplates()
-            sys.exit(0)
+            return
 
         mdfiles     = kwargs.get("mdfiles", [])
         no_style    = kwargs.get("no_style", False)
@@ -739,10 +756,11 @@ Version v{}
         if join or 'join' in full_meta or 'jointfilename' in full_meta:
             document_html, = s.createJointDocument(builder, html_list, full_meta)
 
-        index_html, = s.createIndexHtml(files)
-
         s.saveMetaData(meta_data_list, meta_data_raw_list,
             saveYAML=True, saveJSON=True, saveAggr=True, saveRaw=False)
+
+        index_html, = s.createIndexHtml(files)
+
 
 
     def main(s):
