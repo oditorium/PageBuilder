@@ -146,7 +146,7 @@ _INDEX = """
 
 
 """
-_INDEX_LINE = """- [{0[0]}]({0[2]})"""
+_INDEXLINE = """- [{0[0]}]({0[2]})"""
 
 
 class PageBuilder():
@@ -193,7 +193,6 @@ class PageBuilder():
         )
         s.read_settings(s.p['settings']);
 
-
     def updateParameters(s, **kwargs):
         """
         update the parameters from `kwargs` (only those in kwargs)
@@ -237,6 +236,8 @@ class PageBuilder():
             try:
                 template = template.format(**specific_params)
             except KeyError as e:
+                print(specific_params.keys()) # QQQQQ
+                raise
                 print ("\nTEMPLATE ERROR\n=================")
                 print ("defined items: ", tuple(specific_params.keys()))
                 print ("missing item:  ", e)
@@ -334,9 +335,9 @@ class PageBuilder():
         )
 
         return s._template(
-            body=bodyHtml,
-            metatags = "\n".join(metaTags), # that's html meta tags
-            style=s._style,
+            body        = bodyHtml,
+            metatags    = "\n".join(metaTags), # that's html meta tags
+            style       = s._style,
             **meta                          # that's meta data that might be rendered
         )
 
@@ -371,161 +372,193 @@ pagebuilder = PageBuilder()
 #######################################################################
 ## MAIN
 
-# QUESTION:
-# Should those functions be included in the object? Or in a derived
-# object? Currently this code can not be reused if some things are
-# meant to be changed, but inside an object they could be overwritten
-# by inheritance
+import http.server as hs
 
-def _main_readStyleTemplateSettings():
+class PageBuilderMain():
     """
-    look for style, template and settings files on a number of locations
-    """
-    try:
-        with open("_STYLE.css", "r") as f: style = f.read()
-        print ("reading local _STYLE.css")
-    except FileNotFoundError:
-        style = _STYLE
-
-    try:
-        with open("_TEMPLATE.html", "r") as f: template = f.read()
-        print ("reading local _TEMPLATE.html")
-    except FileNotFoundError:
-        template = _TEMPLATE
-
-    try:
-        with open("_SECTIONTEMPLATE.html", "r") as f: sectiontemplate = f.read()
-        print ("reading local _SECTIONTEMPLATE.html")
-    except FileNotFoundError:
-        sectiontemplate = _SECTIONTEMPLATE
-
-    try:
-        with open("_SETTINGS", "r") as f: settings = f.read()
-        print ("reading local _SETTINGS")
-    except FileNotFoundError:
-        settings = ""
-
-    return (style, template, sectiontemplate, settings)
-
-def main(**kwargs):
-    """
-    actual execution when the module is called from the command line
-
-    all parameters are passed in `kwargs`:
-
-    :mdfiles:           iterable of metamarkdown file names
-    :join:              if true, also generate joint output for html
-    :no_style:          ignore style information
-    :serve:             launch a server (see `port`)
-    :port:              if server is given, that's the port, otherwise ignored
-    :save_templates:    save template files in current directory, then exit
+    wrapper around data and functions that for the PageBuilder object
     """
 
-    if kwargs.get("serve", False):
-        import http.server as hs
-        port = kwargs.get("port", 8000)
-        def run_server(port, bind=None, handler_class=None, server_class=None, protocol=None):
-            """
-            serve the local directory (code from http.server)
-            """
-            if handler_class is None: handler_class = hs.SimpleHTTPRequestHandler
-            if server_class  is None: server_class  = hs.HTTPServer
-            if protocol      is None: protocol      = "HTTP/1.0"
-            if bind          is None: bind          = "127.0.0.1"
+    STYLE               = _STYLE
+    SETTINGS            = _SETTINGS
+    TEMPLATE            = _TEMPLATE
+    SECTIONTEMPLATE     = _SECTIONTEMPLATE
+    INDEX               = _INDEX
+    INDEXLINE           = _INDEXLINE
+    EXAMPLE             = _EXAMPLE
 
-            server_address = (bind, port)
-            handler_class.protocol_version = protocol
-            #with server_class(server_address, handler_class) as httpd: # does not work in 3.4
-            httpd = server_class(server_address, handler_class)
-            sa = httpd.socket.getsockname()
-            serve_message = "Serving HTTP on {host} port {port} (http://{host}:{port}/) ..."
-            print(serve_message.format(host=sa[0], port=sa[1]))
-            try:
-                httpd.serve_forever()
-            except KeyboardInterrupt:
-                print("\nKeyboard interrupt received, exiting.")
-                sys.exit(0)
-            #end with
-        run_server(port)
+    FNSTYLE             = "_STYLE.css"
+    FNSETTINGS          = "_SETTINGS"
+    FNTEMPLATE          = "_TEMPLATE.html"
+    FNSECTIONTEMPLATE   = "_SECTIONTEMPLATE.html"
+    FNEXAMPLE           = "EXAMPLE.md"
 
-    if kwargs.get("save_templates", False):
-        print ("\nsaving:\n-css to _STYLE.css\n-page template to _TEMPLATE.html\n-section template to " +
-                    "_SECTIONTEMPLATE.html\n-settings to _SETTINGS\n-example file to EXAMPLE.md\n\n")
-        with open("_STYLE.css", "w") as f:              f.write(_STYLE)
-        with open("_TEMPLATE.html", "w") as f:          f.write(_TEMPLATE)
-        with open("_SECTIONTEMPLATE.html", "w") as f:   f.write(_SECTIONTEMPLATE)
-        with open("_SETTINGS", "w") as f:               f.write(_SETTINGS)
-        with open("EXAMPLE.md", "w") as f:              f.write(_EXAMPLE)
-        sys.exit(0)
 
-    mdfiles     = kwargs.get("mdfiles", [])
-    no_style    = kwargs.get("no_style", False)
-    join        = kwargs.get("join", False)
+    def readStyleTemplateSettings(s):
+        """
+        look for style, template and settings files on a number of locations
 
-    style, template, sectiontemplate, settings = _main_readStyleTemplateSettings()
-    if no_style: style = ""
-    builder = PageBuilder(
-                style=style,
-                template=template,
-                sectiontemplate=sectiontemplate,
-                settings=settings
-    )
-    files = []
-    full_html = ""
-    full_meta = {}
-    meta_data_list = []
-    meta_data_raw_list = []
+        :returns:       tuple(style, template, sectiontemplate, settings)
+        """
+        try:
+            with open(s.FNSTYLE, "r") as f: style = f.read()
+            print ("reading local", s.FNSTYLE)
+        except FileNotFoundError:
+            style = s.STYLE
 
-    for fn in mdfiles:
-        fnbase, _ = os.path.splitext(fn)
-        fnhtml = fnbase+".html"
-        files.append( (fn, fnbase, fnhtml) )
-        with open(fn, "r") as f: mmd = f.read()
-        html, inner_html, meta_data, meta_data_raw = builder(mmd)
-        meta_data['_filename'] = fn
-        meta_data['_filenamebase'] = fnbase
-        meta_data_raw['_filename'] = fn
-        meta_data_raw['_filenamebase'] = fnbase
-        meta_data_list.append(meta_data)
-        meta_data_raw_list.append(meta_data_raw)
-        full_html = full_html + inner_html
-        full_meta = contract([meta_data, full_meta])
-            # this applies the meta data from the right, so oldest entry wins!
-            # (in particular, settings always win!)
-        if "filename" in meta_data: fnhtml = meta_data['filename'].strip()
-        print("converting {0} to html (output: {1})".format(fn, fnhtml))
-        with open(fnhtml, "w") as f: f.write(html)
+        try:
+            with open(s.FNTEMPLATE, "r") as f: template = f.read()
+            print ("reading local", s.FNTEMPLATE)
+        except FileNotFoundError:
+            template = s.TEMPLATE
 
-    # creating document.html
-    if join or 'join' in full_meta or 'jointfilename' in full_meta:
-        html = builder.createHtmlPageFromHtmlAndMeta(full_html, full_meta)
-        if "jointfilename" in full_meta: fnhtml = full_meta['jointfilename'].strip()
-        else: fnhtml = "document.html"
-        print("saving joined html file (output: {0})".format(fnhtml))
-        with open(fnhtml, "w") as f: f.write(html)
+        try:
+            with open(s.FNSECTIONTEMPLATE, "r") as f: sectiontemplate = f.read()
+            print ("reading local", s.FNSECTIONTEMPLATE)
+        except FileNotFoundError:
+            sectiontemplate = s.SECTIONTEMPLATE
 
-    # creating index.html
-    print ("saving index (output: index.html)")
-    md = "\n".join(_INDEX_LINE.format(f) for f in files)
-        # TODO: this is wrong if the file contains the `filename` directive
-        # TODO: this does not link to the joined file
-    md = _INDEX.format(md)
-    with open("index.html", "w") as f:
-        f.write(_TEMPLATE.format(body=mdwn.markdown(md), title="INDEX", style="", metatags=""))
+        try:
+            with open(s.FNSETTINGS, "r") as f: settings = f.read()
+            print ("reading local", s.FNSETTINGS)
+        except FileNotFoundError:
+            settings = ""
 
-    # saving the meta data
-    FNBASE = "index"
-    print ("saving meta data (output: {0}.yaml, {0}.json, {0}_raw.yaml, {0}_raw.json)".format(FNBASE))
-    with open("{}.yaml".format(FNBASE), "w") as f:
-        f.write(yaml.dump(meta_data_list, default_flow_style=False))
-    with open("{}r.yaml".format(FNBASE), "w") as f:
-        f.write(yaml.dump(meta_data_raw_list, default_flow_style=False))
-    with open("{}.json".format(FNBASE), "w") as f:  f.write(json.dumps(meta_data_list))
-    with open("{}r.json".format(FNBASE), "w") as f: f.write(json.dumps(meta_data_raw_list))
+        return (style, template, sectiontemplate, settings)
+
+    def _runServer(port, bind=None, handler_class=None, server_class=None, protocol=None):
+        """
+        serve the local directory (code from http.server)
+
+        :port:          at which port to serve
+        :bind:          IP address to bind (typically 127.0.0.1 or 0.0.0.0)
+        :handler_class: handler class (default: SimpleHTTPRequestHandler)
+        :server_class:  server class (default: HTTPServer)
+        :protocol:      protocol (default "HTTP/1.0")
+        """
+        if handler_class is None: handler_class = hs.SimpleHTTPRequestHandler
+        if server_class  is None: server_class  = hs.HTTPServer
+        if protocol      is None: protocol      = "HTTP/1.0"
+        if bind          is None: bind          = "127.0.0.1"
+
+        server_address = (bind, port)
+        handler_class.protocol_version = protocol
+        #with server_class(server_address, handler_class) as httpd: # does not work in 3.4
+        httpd = server_class(server_address, handler_class)
+        sa = httpd.socket.getsockname()
+        serve_message = "Serving HTTP on {host} port {port} (http://{host}:{port}/) ..."
+        print(serve_message.format(host=sa[0], port=sa[1]))
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("\nKeyboard interrupt received, exiting.")
+            sys.exit(0)
+        #end with
+
+    def main(s, **kwargs):
+        """
+        actual execution when the module is called from the command line
+
+        all parameters are passed in `kwargs`:
+
+        :mdfiles:           iterable of metamarkdown file names
+        :join:              if true, also generate joint output for html
+        :no_style:          ignore style information
+        :serve:             launch a server (see `port`)
+        :port:              if server is given, that's the port, otherwise ignored
+        :save_templates:    save template files in current directory, then exit
+        """
+
+        if kwargs.get("serve", False):
+            port = kwargs.get("port", 8000)
+            s.runServer(port)
+
+        if kwargs.get("save_templates", False):
+            print ("Saving templates:")
+            print ("Style               =>", s.FNSTYLE)
+            print ("Template            =>", s.FNTEMPLATE)
+            print ("Section Template    =>", s.FNSECTIONTEMPLATE)
+            print ("Settings            =>", s.FNSETTINGS)
+            print ("Example             =>", s.FNEXAMPLE)
+            with open(s.FNSTYLE, "w") as f:             f.write(s.STYLE)
+            with open(s.FNTEMPLATE, "w") as f:          f.write(s.TEMPLATE)
+            with open(s.FNSECTIONTEMPLATE, "w") as f:   f.write(s.SECTIONTEMPLATE)
+            with open(s.FNSETTINGS, "w") as f:          f.write(s.SETTINGS)
+            with open(s.FNEXAMPLE, "w") as f:           f.write(s.EXAMPLE)
+            sys.exit(0)
+
+        mdfiles     = kwargs.get("mdfiles", [])
+        no_style    = kwargs.get("no_style", False)
+        join        = kwargs.get("join", False)
+
+        style, template, sectiontemplate, settings = s.readStyleTemplateSettings()
+        if no_style: style = ""
+        builder = PageBuilder(
+                    style=style,
+                    template=template,
+                    sectiontemplate=sectiontemplate,
+                    settings=settings
+        )
+        files = []
+        full_html = ""
+        full_meta = {}
+        meta_data_list = []
+        meta_data_raw_list = []
+
+        for fn in mdfiles:
+            fnbase, _ = os.path.splitext(fn)
+            fnhtml = fnbase+".html"
+            files.append( (fn, fnbase, fnhtml) )
+            with open(fn, "r") as f: mmd = f.read()
+            html, inner_html, meta_data, meta_data_raw = builder(mmd)
+            meta_data['_filename'] = fn
+            meta_data['_filenamebase'] = fnbase
+            meta_data_raw['_filename'] = fn
+            meta_data_raw['_filenamebase'] = fnbase
+            meta_data_list.append(meta_data)
+            meta_data_raw_list.append(meta_data_raw)
+            full_html = full_html + inner_html
+            full_meta = contract([meta_data, full_meta])
+                # this applies the meta data from the right, so oldest entry wins!
+                # (in particular, settings always win!)
+            if "filename" in meta_data: fnhtml = meta_data['filename'].strip()
+            print("converting {0} to html (output: {1})".format(fn, fnhtml))
+            with open(fnhtml, "w") as f: f.write(html)
+
+        # creating document.html
+        if join or 'join' in full_meta or 'jointfilename' in full_meta:
+            html = builder.createHtmlPageFromHtmlAndMeta(full_html, full_meta)
+            if "jointfilename" in full_meta: fnhtml = full_meta['jointfilename'].strip()
+            else: fnhtml = "document.html"
+            print("saving joined html file (output: {0})".format(fnhtml))
+            with open(fnhtml, "w") as f: f.write(html)
+
+        # creating index.html
+        print ("saving index (output: index.html)")
+        md = "\n".join(s.INDEXLINE.format(f) for f in files)
+            # TODO: this is wrong if the file contains the `filename` directive
+            # TODO: this does not link to the joined file
+        md = _INDEX.format(md)
+        with open("index.html", "w") as f:
+            f.write(s.TEMPLATE.format(body=mdwn.markdown(md), title="INDEX", style="", metatags=""))
+
+        # saving the meta data
+        FNBASE = "index"
+            # TODO: is index really the right name?
+            # TODO: link output to flags
+        print ("saving meta data (output: {0}.yaml, {0}.json, {0}_raw.yaml, {0}_raw.json)".format(FNBASE))
+        with open("{}.yaml".format(FNBASE), "w") as f:
+            f.write(yaml.dump(meta_data_list, default_flow_style=False))
+        with open("{}r.yaml".format(FNBASE), "w") as f:
+            f.write(yaml.dump(meta_data_raw_list, default_flow_style=False))
+        with open("{}.json".format(FNBASE), "w") as f:  f.write(json.dumps(meta_data_list))
+        with open("{}r.json".format(FNBASE), "w") as f: f.write(json.dumps(meta_data_raw_list))
 
 
 
 if __name__ == "__main__":
+
+    # TODO: move more of this into the handler class
 
     description = """
 ---------------------------------------
@@ -598,14 +631,11 @@ Version v{}
         main(serve=True, port=8000)
         sys.exit(0)
 
-
-
-
     if args.save_templates:
-        main(save_templates=True, port=8000)
+        PageBuilderMain().main(save_templates=True, port=8000)
         sys.exit(0)
 
-    main(
+    PageBuilderMain().main(
         mdfiles     = args.mdfiles,
         join        = args.join,
         no_style    = args.no_style,
