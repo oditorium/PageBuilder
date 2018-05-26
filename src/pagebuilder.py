@@ -498,25 +498,27 @@ Version v{}
 
         return (style, template, sectiontemplate, settings)
 
-    def _runServer(port, bind=None, handler_class=None, server_class=None, protocol=None):
+    def runServer(s, port, bind=None, handler=None, server=None, protocol=None):
         """
-        serve the local directory (code from http.server)
+        serve the local directory
 
         :port:          at which port to serve
         :bind:          IP address to bind (typically 127.0.0.1 or 0.0.0.0)
-        :handler_class: handler class (default: SimpleHTTPRequestHandler)
-        :server_class:  server class (default: HTTPServer)
+        :handler:       handler class (default: SimpleHTTPRequestHandler)
+        :server:        server class (default: HTTPServer)
         :protocol:      protocol (default "HTTP/1.0")
+
+        Note: the code is taken out of http.server
         """
-        if handler_class is None: handler_class = hs.SimpleHTTPRequestHandler
-        if server_class  is None: server_class  = hs.HTTPServer
-        if protocol      is None: protocol      = "HTTP/1.0"
-        if bind          is None: bind          = "127.0.0.1"
+        if handler  is None: handler    = hs.SimpleHTTPRequestHandler
+        if server   is None: server     = hs.HTTPServer
+        if protocol is None: protocol   = "HTTP/1.0"
+        if bind     is None: bind       = "127.0.0.1"
 
         server_address = (bind, port)
-        handler_class.protocol_version = protocol
-        #with server_class(server_address, handler_class) as httpd: # does not work in 3.4
-        httpd = server_class(server_address, handler_class)
+        handler.protocol_version = protocol
+        #with server_class(server_address, handler) as httpd: # does not work in 3.4
+        httpd = server(server_address, handler)
         sa = httpd.socket.getsockname()
         serve_message = "Serving HTTP on {host} port {port} (http://{host}:{port}/) ..."
         print(serve_message.format(host=sa[0], port=sa[1]))
@@ -524,7 +526,7 @@ Version v{}
             httpd.serve_forever()
         except KeyboardInterrupt:
             print("\nKeyboard interrupt received, exiting.")
-            sys.exit(0)
+            return
         #end with
 
     def run(s, **kwargs):
@@ -539,11 +541,17 @@ Version v{}
         :serve:             launch a server (see `port`)
         :port:              if server is given, that's the port, otherwise ignored
         :save_templates:    save template files in current directory, then exit
+
+        NOTE: the split between `main` and `run` is that (a) `run` does not
+        know about command line args, and (b) there is no non-trivial code
+        in main. This allows to reuse the object in a non-command-line
+        context.
         """
 
         if kwargs.get("serve", False):
             port = kwargs.get("port", 8000)
             s.runServer(port)
+            sys.exit(0)
 
         if kwargs.get("save_templates", False):
             print ("Saving templates:")
@@ -635,6 +643,11 @@ Version v{}
 
             if __name__ == "__main__":
                 PageBuilderMain().main()
+
+        NOTE: the split between `main` and `run` is that (a) `run` does not
+        know about command line args, and (b) there is no non-trivial code
+        in main. This allows to reuse the object in a non-command-line
+        context.
         """
 
         args = s.parseArgs()
@@ -647,7 +660,7 @@ Version v{}
             sys.exit(0)
 
         if args.save_templates:
-            s.run(save_templates=True, port=8000)
+            s.run(save_templates=True)
             sys.exit(0)
 
         s.run(
