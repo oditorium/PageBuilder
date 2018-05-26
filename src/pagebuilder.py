@@ -134,8 +134,13 @@ _META = """
 _INDEX = """
 # Index
 
+_NOTE: not all those links will work, depending on whether the command line
+settings mean those files are generated. Also, currently this file assumes
+default file names and will not pick up changes eg with the `:jointfilename:`
+tag_
+
 ## Aggregate File
--to come-
+- [document](document.html)
 
 ## Component Files
 {}
