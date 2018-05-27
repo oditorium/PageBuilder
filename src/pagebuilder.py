@@ -6,7 +6,7 @@ creates a self-contained HTML page from a metamarkdown file
 Licensed under the MIT License
 <https://opensource.org/licenses/MIT>
 """
-__version__ = "2.1"
+__version__ = "2.2"
 
 import metamarkdown as mm
 import markdown as mdwn
@@ -435,7 +435,7 @@ class PageBuilder():
             print ()
             return "ERROR: Missing Sectiontemplate {}".format(missing_template_name)
         template = result.body
-        
+
         # overwrite the parameters in the template with those in s.p if defined there
         params = result.meta.get("defaults", {})
         #if params is None: params = {}
