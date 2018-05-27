@@ -65,3 +65,7 @@
                         But in an html file all formatting will be ignored
 
                         (it can of course contain <strong>tags</strong>)
+
+:dictfield|dct:         key1 := value1,
+                        key2 := value2,
+                        key3 := value3,

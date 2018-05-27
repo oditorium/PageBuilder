@@ -260,7 +260,7 @@ class PageBuilder():
     """
 
     _fieldParsers = {
-        "title":            str,
+        "title":            mm.parse_str,
         "tags":             mm.parse_csv,
         "keywords":         mm.parse_csv,
         "meta":             mm.parse_dict,
@@ -461,29 +461,21 @@ class PageBuilder():
         """
         return s._processTemplate("_template", params)
 
-    def _sectionTemplate(s, **params):
+    def applyFilters(s, params):
         """
-        processes section template, returning the html for the section
+        applies filters to all fields of form 'name|filter'
 
-        :params:    keyword arguments corresponding to the fields the
-                    template expect to be filled from the file data
-                    (the params dict is modified, see below)
-        :returns:   the section html
+        :params:        all template parameters
+        :returns:       new parameter dict with filters applied
 
-        The function applies filters to the parameters, depending on their
-        names. For example, a parameter called "desc|md" (or :desc|md:
-        in the mmd field) would be run through a markdown filter with the
-        result being stored in params['desc']
+        EXAMPLE
+
+            _applyFilters({'f1|md': 'lorem _ipsum_ dolor'})
+            -> {
+                'f1|md':    as above,
+                'f1':       '<p>lorem <em>ipsum</em></p>', # markdown expanded
+            }
         """
-        sectionTemplateName = params.get("sectiontemplate", "default")
-        sectionTemplateName = "_sectiontemplate_"+sectionTemplateName.strip()
-            # params['_sectiontemplate'] contains the (short) name of the template
-            # this is prepended with "_sectiontemplate_" to get the key under which it is stored
-            # eg the default template will be under "_sectiontemplate_default"
-
-        # process all meta data fields, applying filters
-        # for example :fieldname|md: applies the markdown filter to the contents
-        # of the field, and stores the result as :fieldname:
         params1 = {} # can't update the paramter dict during iteration
         for k,v in params.items():
 
@@ -502,7 +494,43 @@ class PageBuilder():
                 params1[k[0:-4]] = \
                     "<div class='ff ff-div ff-{1}'>{0}</div>".format(v, k[0:-4])
 
+            # dict filter -> interpret as (ordered) dict
+            elif k[-4:] == "|dct":
+                params1[k[0:-4]] = mm.parse_dict(v)
+
+            # dict filter -> interpret as table (tuple of tuples)
+            elif k[-4:] == "|tbl":
+                params1[k[0:-4]] = mm.parse_table(v)
+
+            # lines filter -> split string by lines
+            elif k[-3:] == "|ln":
+                params1[k[0:-3]] = mm.parse_lines(v)
+
+            # csv filter -> split at commas
+            elif k[-4:] == "|csv":
+                params1[k[0:-4]] = mm.parse_csv(v)
+
         params.update(params1)
+        return params
+
+    def _sectionTemplate(s, **params):
+        """
+        processes section template, returning the html for the section
+
+        :params:    keyword arguments corresponding to the fields the
+                    template expect to be filled from the file data
+        :returns:   the section html
+        """
+        sectionTemplateName = params.get("sectiontemplate", "default")
+        sectionTemplateName = "_sectiontemplate_"+sectionTemplateName.strip()
+            # params['_sectiontemplate'] contains the (short) name of the template
+            # this is prepended with "_sectiontemplate_" to get the key under which it is stored
+            # eg the default template will be under "_sectiontemplate_default"
+
+        # process all meta data fields, applying filters
+        # for example :fieldname|md: applies the markdown filter to the contents
+        # of the field, and stores the result as :fieldname:
+
         return s._processTemplate(sectionTemplateName, params)
 
     def createHtmlPageFromHtmlAndMeta(s, bodyHtml, meta=None):
@@ -531,8 +559,15 @@ class PageBuilder():
 
         :returns:   Namedtuple(html, innerHtml, metaData, metaDataRaw)
         """
+
+        # process the meta markdown file with the settings body (links!)
         processed = s._processMetaMarkdown(metaMarkdown+s._settings_body)
+
+        # combine the meta data with the settings meta data (former has priority)
         metaData = contract([s._settings_meta, processed.meta])
+
+        # apply filters
+        metaData = s.applyFilters(metaData)
 
         # apply the section template
         sectionHtml = s._sectionTemplate(body=processed.html, **metaData)
