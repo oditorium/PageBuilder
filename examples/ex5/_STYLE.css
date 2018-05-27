@@ -1,4 +1,4 @@
-:parameters:    baseFont        := sans-serif,
+:defaults:      baseFont        := sans-serif,
                 baseFontsize    := 28px,
                 baseLineheight  := 1.5,
                 baseWidth       := 900px

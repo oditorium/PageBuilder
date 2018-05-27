@@ -1,0 +1,7 @@
+// set default values for missing fields
+// (without this if a field is missing the conversion will fail)
+
+:title:                 -
+:field2:                Field 2 - Settings - ERR
+:field3:                Field 3 - Settings - OK
+:field4:                Field 4 - Settings - OK

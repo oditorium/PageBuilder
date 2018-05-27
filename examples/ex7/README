@@ -1,0 +1,14 @@
+# Example 7 -- Template Defaults
+
+## Usage
+
+- run `convert` to convert the files
+- run `serve` to serve the current directory
+- run `clean` to remove generated files
+
+## Description
+
+This example shows how defaults can be defined in the template itself, or
+in the local settings file. In case it is defined in both, the settings
+file overrides the template defaults, and both are overridden by whatever
+is defined in the file itself.
