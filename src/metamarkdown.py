@@ -46,7 +46,7 @@ from datetime import datetime
 
 
 ################################################################################
-## RST PARSERS
+## PARSERS
 ################################################################################
 def parse_date_ymd(s):
     """
@@ -139,12 +139,12 @@ def parse_dict(s, sep=None):
 
 def parse_str(s):
     """
-    parser for string (can also just use `str`)
+    parser for (stripped) string
 
     :s:         the input string to parse
-    :returns:   the string
+    :returns:   the string, stripped of leading and trailing whitespace
     """
-    return s
+    return s.strip()
 
 def parse_markdown(s):
     """
@@ -444,7 +444,7 @@ class Parser():
         meta = OrderedDict()
         for tagi, tagdatai in tags.items():
             if tagi in fieldParsers: parse = fieldParsers[tagi]
-            else:               parse = str
+            else:                    parse = parse_str
             meta[tagi] = parse(tagdatai)
 
         # apply all selected filters to the markdown
