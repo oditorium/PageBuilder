@@ -1,0 +1,27 @@
+# Example 5 -- Multiple Section Templates
+
+## Usage
+
+- run `convert` to convert the files
+- run `serve` to serve the current directory
+- run `clean` to remove generated files
+
+
+## Description
+
+This example shows how to work with multiple templates. It is slightly
+unnatural in the it provides two files:
+
+(1) the file `_SECTIONTEMPLATE.html` that, by definition, is containing the
+`default` template and that is  the only one we have used in the previous
+examples
+
+(2) the file `_SECTIONTEMPLATES.html` that contains the other templates,
+notably the templates for the formats called `myformat1` and `myformat2`
+
+Usually if multiple templates are used and the default template is to be
+changed from the default default template then simply a section
+
+    ===== SECTIONTYPE: default  =====
+
+should be added to `_SECTIONTEMPLATES.html`

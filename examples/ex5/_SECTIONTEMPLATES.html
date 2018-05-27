@@ -1,0 +1,65 @@
+
+This is the preamble of the _SECTIONTEMPLATES file, ie the section before
+the first divider. This section is discarded, so it can contain arbitrary
+text and comments.
+
+The _SECTIONTEMPLATES file can also contain comment lines, starting with '//'.
+
+The different templates in the file are separated by divider lines like the
+one below. The rule is:
+
+    [BEGINLINE][\space or =]* SECTIONTYPE: sectionname [\space or =]* [ENDLINE]
+
+The difference between the _SECTIONTEMPLATES (plural) and the _SECTIONTEMPLATE (singular)
+files is as follows:
+
+- _SECTIONTEMPLATE changes the `default` template, meaning it is applied to
+  all files that do not explicitly specify another template using the
+  `:sectiontype:` type, eg `:sectiontype: clean`
+
+- _SECTIONTEMPLATES changes other named templates. They have to explicitly
+  activated in a files using the `:sectiontype: <type>` meta tag, where
+  `<type>` corresponds to the term after SECTIONTYPE in the dividers below
+
+- The _SECTIONTEMPLATES file can define the `default` template by using
+  `== SECTIONTYPE: default ==`; if also a _SECTIONTEMPLATE file is present
+  the result is undefined
+
+
+
+=============================== SECTIONTYPE: myformat1 ==============================
+// SECTIONTYPE:         myformat1
+// FIELDS:              body, heading, textfield, mdfield, prefield, divfield
+// DESCRIPTION:         renders the heading as h2, and a number of fields that
+//                      demonstrate the available filters
+
+<h2>{heading}</h2>
+<p><em>this is a template of type format1</em></p>
+
+<table class="section">
+<tr> <th>Text Field</th>            <td>{textfield}</td>    </tr>
+<tr> <th>Markdown Field</th>        <td>{mdfield}</td>      </tr>
+<tr> <th>Pre Field</th>             <td>{prefield}</td>     </tr>
+<tr> <th>Div Field</th>             <td>{divfield}</td>     </tr>
+<table>
+<p><em>body starts below</em></p>
+<hr/>
+
+{body}
+
+
+
+=============================== SECTIONTYPE: myformat2  ===============================
+// SECTIONTYPE:         myformat2
+// FIELDS:              body, heading
+// DESCRIPTION:         only renders body content of a meta-markdown file,
+//                      as well as the name of the `title` field which also
+//                      determines the content of the <title> tag
+
+<h2>{heading}</h2>
+<p><em>this is a template of type format2</em></p>
+
+<p><em>body starts below</em></p>
+<hr/>
+
+{body}

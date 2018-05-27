@@ -25,6 +25,6 @@
 :meta:              field1 := value1, field2 := value2
 :join:              1
 :jointfilename:     document.html
-:sectiontemplate:   cleantemplate
+:sectiontemplate:   clean
 
 # The Overall Title

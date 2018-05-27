@@ -1,0 +1,20 @@
+
+// This is the `default` section template that is applied to all files that
+// not explicitly define a section type using the :sectiontype:  meta tag
+// (or that use `:sectiontype: default`)
+
+// SECTIONTYPE:         default
+// FIELDS:              body, heading, title
+// DESCRIPTION:         demo template, rendering :heading: as h2, and prints
+//                      the :title: tag just below the heading
+
+<h2>{heading}</h2>
+<p><em>this is a template of type default</em></p>
+
+<blockquote><strong>Summary:</strong> {summary}</blockquote>
+
+<p><em>page title: {title}</em></p>
+<p><em>body starts below</em></p>
+<hr/>
+
+{body}
