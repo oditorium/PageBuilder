@@ -102,6 +102,9 @@ the `examples` directory.
 - **Example 5 -- Multiple Section Templates:** This example shows how multiple
   section templates can be used within the same overall document.
 
+- **Example 6 -- Title page and Chapter template:** This example shows how
+  how to use the built-in section templates for title pages and chapters.
+
 
 ## License
 

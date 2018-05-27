@@ -1,0 +1,13 @@
+# Example 6 -- Title and Chapter templates
+
+## Usage
+
+- run `convert` to convert the files
+- run `serve` to serve the current directory
+- run `clean` to remove generated files
+
+
+## Description
+
+This example shows how to use the `titlepage` and `chapter` templates that
+have been introduced in version 2.1.
