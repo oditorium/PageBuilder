@@ -97,23 +97,26 @@ files is as follows:
 
 
 
-=============================== SECTIONTYPE: h1  ===============================
-// SECTIONTYPE:         h1
+========================== SECTIONTYPE: titlepage  ==========================
+// SECTIONTYPE:         title
+// FIELDS:              doctitle, docauthor, docdate, docabstract
+// DESCRIPTION:         renders a title page for the documents; note that
+//                      the body content is not rendered at all and can
+//                      for example be used for comments
+
+<h1>{doctitle}</h1>
+
+<div class='title title-author'>    {docauthor}     </div>
+<div class='title title-date'>      {docdate}       </div>
+<div class='title title-abstract'>{docabstract}     </div>
+
+
+
+=========================== SECTIONTYPE: chapter  ===========================
+// SECTIONTYPE:         chapter
 // FIELDS:              body, heading
-// DESCRIPTION:         renders the body content of a markdown file, prepended
-//                      with :heading: rendered as <h1>
-
-<h1>{heading}</h1>
-
-{body}
-
-
-
-=============================== SECTIONTYPE: h2  ===============================
-// SECTIONTYPE:         h2
-// FIELDS:              body, heading
-// DESCRIPTION:         renders the body content of a markdown file, prepended
-//                      with :heading: rendered as <h2>
+// DESCRIPTION:         renders a document chapter, starting with an h2
+//                      heading from the field :heading:
 
 <h2>{heading}</h2>
 
@@ -169,6 +172,9 @@ pre {{
 table.section {{border-collapse: separate; width: 90%; border-spacing: 10px; }}
 table.section td, table.section th {{font-size: 120%; text-align: left; }}
 table.section td{{padding-left: 20px; border-left: 5px solid #ccc; }}
+.title {{text-align: center;}}
+.ff-docabstract h1 {{font-size: 100%; }}
+div.ff-docabstract {{font-size: 80%; padding: 50px 20%;}}
 """.strip()
 
 _SETTINGS = """
@@ -388,7 +394,15 @@ class PageBuilder():
         # the paramters tag allows to define certain parameters in the template
         # that have default values but that can be overwritten with parameters
         # provided either in the defaults or in the template itself
-        result = mm.parsetext(s.p[template_name], fieldParsers={"parameters": mm.parse_dict})
+        try:
+            result = mm.parsetext(s.p[template_name], fieldParsers={"parameters": mm.parse_dict})
+        except KeyError as e:
+            missing_template_name = str(e).rsplit("_", maxsplit=1)[1][:-1]
+            print ("\nMISSING-TEMPLATE ERROR\n======================")
+            print ("missing:  ", missing_template_name)
+            print ("defined: ", s.p['_sectiontemplatenames'])
+            print ()
+            return "ERROR: Missing Sectiontemplate {}".format(missing_template_name)
         template = result.body
 
         # overwrite the parameters in the template with those in s.p if defined there
@@ -406,9 +420,9 @@ class PageBuilder():
             except KeyError as e:
                 #print("QQQQQ PARAMS KEYS", params.keys())
                 #raise
-                print ("\nTEMPLATE ERROR\n=================")
-                print ("defined items: ", tuple(params.keys()))
-                print ("missing item:  ", e)
+                print ("\nTEMPLATE ERROR\n==============")
+                print ("missing:  ", e)
+                print ("defined: ", tuple(params.keys()))
                 print ()
                 template = "KEY ERROR: {} ".format(e)
         return template
