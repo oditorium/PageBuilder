@@ -124,7 +124,7 @@ files is as follows:
 """
 
 _STYLE = """
-:parameters:    baseFont        := sans-serif,
+:defaults:      baseFont        := sans-serif,
                 baseFontsize    := 28px,
                 baseLineheight  := 1.5,
                 baseWidth       := 900px
@@ -386,16 +386,13 @@ class PageBuilder():
         :template_name:     key of the template in `s.p`
         :specific_params:   parameters specific to the file rendered (eg
                             the body html for rendering a page template)
-        :returns:           the template with parameters filled in
+        :returns:           the template with defaults filled in
         """
         if specific_params is None: specific_params = {}
 
-        # process the :parameters: tag
-        # the paramters tag allows to define certain parameters in the template
-        # that have default values but that can be overwritten with parameters
-        # provided either in the defaults or in the template itself
+        # process the :defaults: tag
         try:
-            result = mm.parsetext(s.p[template_name], fieldParsers={"parameters": mm.parse_dict})
+            result = mm.parsetext(s.p[template_name], fieldParsers={"defaults": mm.parse_dict})
         except KeyError as e:
             missing_template_name = str(e).rsplit("_", maxsplit=1)[1][:-1]
             print ("\nMISSING-TEMPLATE ERROR\n======================")
@@ -404,9 +401,10 @@ class PageBuilder():
             print ()
             return "ERROR: Missing Sectiontemplate {}".format(missing_template_name)
         template = result.body
-
+        
         # overwrite the parameters in the template with those in s.p if defined there
-        params = result.meta.get("parameters", {})
+        params = result.meta.get("defaults", {})
+        #if params is None: params = {}
         params = {
             k: s.p[k] if k in s.p else v
             for k,v in params.items()
