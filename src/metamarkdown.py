@@ -35,7 +35,7 @@ USAGE
 Licensed under the MIT License
 <https://opensource.org/licenses/MIT>
 """
-__version__ = "0.2.2"
+__version__ = "0.3"
 
 
 import re
@@ -50,51 +50,109 @@ from datetime import datetime
 ################################################################################
 def parse_date_ymd(s):
     """
-    rst parser for a date field (format Ymd)
+    parser for a date field (format Ymd)
+
+    :s:         the input string to parse, which should be of the format
+                    2002-12-31
+    :returns:   datetime object
     """
     try: return datetime.strptime(s, '%Y-%m-%d').date()
     except ValueError: return "ERR({})".format(s)
 
 def parse_csvs(s):
     """
-    rst parser for comma separated string fields (returns frozenset)
+    parser for comma separated string fields, returning frozenset
+
+    :s:         the input string to parse, which should be of the format
+                    string 1, string 2, string 3
+    :returns:   frozenset('string 1', ...)
     """
     return frozenset(map(lambda ss: ss.strip(), s.split(',')))
 
 def parse_csv(s):
     """
-    rst parser for comma separated string fields (returns tuple)
+    parser for comma separated string fields, returning tuple
+
+    :s:         the input string to parse, which should be of the format
+                    string 1, string 2, string 3
+    :returns:   tuple('string 1', ...)
     """
     return tuple(map(lambda ss: ss.strip(), s.split(',')))
 
 def parse_lines(s):
     """
-    rst parser for string fields split by lines (returns tuple)
+    parser for line-separated string fields
+
+    :s:         the input string to parse, which should be of the format
+                    string 1
+                    string 2
+                    string 3
+    :returns:   tuple('string 1', ...)
     """
     return tuple(map(lambda ss: ss.strip(), s.split('\n')))
 
 def parse_table(s):
     """
-    rst parser table (rows as lines, comma separated within; returns tuple)
+    parser for csv table
+
+    :s:         the input string to parse, which should be of the format
+                    v11, v12, v13, v14
+                    v21, v22, v23, v24
+                    v31, v32, v33, v34
+    :returns:   tuple(('v11', 'v12', 'v13', 'v14'), ...)
     """
     return tuple(map(lambda s2: tuple(map(lambda s3: s3.strip(), s2.split(','))), s.strip().split('\n')))
 
 def parse_dict(s, sep=None):
     """
-    rst parser for (ordered) dicts; default separator is ':='
+    parser for (ordered) dicts
+
+    :s:         the input string to parse, which should be of the format
+                    key1 :=     value1,
+                    key2 :=     value2,
+                    key3 :=     value3,
+                where the last comma is optional
+    :sep:       separator (default is ':=')
+    :returns:   OrderedDict(('key1', 'value1'), ...)
     """
-    try: return OrderedDict(map (lambda s2: tuple(map(lambda s3: s3.strip(), s2.split(':='))), s.split(",")))
-    except: return None
+    if sep is None: sep = ":="
+
+    # deal with the comma on the last line
+    s_split = s.split(",")
+    if re.match("^\s*$", s_split[-1]):
+        del s_split[-1]
+
+    # now deal with the dict
+    try: return OrderedDict(
+                    map (
+                        lambda s2: tuple(map(
+                                            # split at
+                                            lambda s3: s3.strip(),
+                                            s2.split(sep)
+                        )),
+                        s_split
+                    )
+                )
+    except:
+        raise
+        return OrderedDict()
 
 def parse_str(s):
     """
-    rst parser for string (can also just use `str`)
+    parser for string (can also just use `str`)
+
+    :s:         the input string to parse
+    :returns:   the string
     """
     return s
 
 def parse_markdown(s):
     """
-    rst parser for markdown
+    parser for markdown
+
+    :s:         the input string to parse which should be valid markdown
+    :returns:   the html associated with the markdown
+                (also replaces '--' with em-dash)
     """
     return mdwn.markdown(_replace_emdash(s))
 
