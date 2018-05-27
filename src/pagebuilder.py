@@ -12,9 +12,13 @@ import metamarkdown as mm
 import markdown as mdwn
 from transformer import contract
 from collections import namedtuple
+from collections import OrderedDict
 import json
 import yaml
+import re
 
+########################################################################################
+## STRING CONSTANTS
 
 _TEMPLATE = """
 <html>
@@ -45,7 +49,74 @@ _TEMPLATE = """
 </html>
 """.strip()
 
-_SECTIONTEMPLATE="""
+_SECTIONTEMPLATE_DEFAULT="""
+// This is the `default` section template that is applied to all files that
+// not explicitly define a section type using the :sectiontype:  meta tag
+// (or that use `:sectiontype: default`)
+
+{body}
+"""
+
+_SECTIONTEMPLATE_CLEAN="""
+// This is the `clean` section template. It can not usually be changed
+// unless explitly overwritten in the `_SECTIONTEMPLATES` (plural) file, and
+// it is meant to be a template that only renders the body text of a  meta
+// markdown file. It can be applied using the `:sectiontype: clean` meta
+// tag, and is mostly useful when the default section template has been
+// changed because of the presence `_SECTIONTEMPLATE` (singular) file.
+
+{body}
+"""
+
+_SECTIONTEMPLATES="""
+This is the preamble of the _SECTIONTEMPLATES file, ie the section before
+the first divider. This section is discarded, so it can contain arbitrary
+text and comments.
+
+The _SECTIONTEMPLATES file can also contain comment lines, starting with '//'.
+
+The different templates in the file are separated by divider lines like the
+one below. The rule is:
+
+    [BEGINLINE][\space or =]* SECTIONTYPE: sectionname [\space or =]* [ENDLINE]
+
+The difference between the _SECTIONTEMPLATES (plural) and the _SECTIONTEMPLATE (singular)
+files is as follows:
+
+- _SECTIONTEMPLATE changes the `default` template, meaning it is applied to
+  all files that do not explicitly specify another template using the
+  `:sectiontype:` type, eg `:sectiontype: clean`
+
+- _SECTIONTEMPLATES changes other named templates. They have to explicitly
+  activated in a files using the `:sectiontype: <type>` meta tag, where
+  `<type>` corresponds to the term after SECTIONTYPE in the dividers below
+
+- The _SECTIONTEMPLATES file can define the `default` template by using
+  `== SECTIONTYPE: default ==`; if also a _SECTIONTEMPLATE file is present
+  the result is undefined
+
+
+
+=============================== SECTIONTYPE: h1  ===============================
+// SECTIONTYPE:         h1
+// FIELDS:              body, heading
+// DESCRIPTION:         renders the body content of a markdown file, prepended
+//                      with :heading: rendered as <h1>
+
+<h1>{heading}</h1>
+
+{body}
+
+
+
+=============================== SECTIONTYPE: h2  ===============================
+// SECTIONTYPE:         h2
+// FIELDS:              body, heading
+// DESCRIPTION:         renders the body content of a markdown file, prepended
+//                      with :heading: rendered as <h2>
+
+<h2>{heading}</h2>
+
 {body}
 """
 
@@ -146,13 +217,36 @@ tag_
 
 ## Component Files
 {}
-
-
-
-
 """
 _INDEXLINE = """- [{0[0]}]({0[2]})"""
 
+
+########################################################################################
+## HELPER FUNCTIONS
+
+from itertools import zip_longest
+
+def _grouper(iterable, n=2, fillvalue=None):
+    """
+    groups iterable into chunks of size n
+
+    :iterable:  the iterable to be chunked
+    :n:         the size of the chunks
+    :fillvalue:    the value filling the last chunk
+    :returns:      chunked iterable
+
+    USAGE
+
+        grouper("ABCDE") # -> (("A", "B"), ("C", "D"), ("E", None))
+    """
+    args = [iter(iterable)] * n
+    return zip_longest(*args, fillvalue=fillvalue)
+
+
+
+
+########################################################################################
+## CLASS PAGE BUILDER
 
 class PageBuilder():
     """
@@ -167,36 +261,50 @@ class PageBuilder():
         "headinglevel":     int,
     }
 
-
-    _parameters = {
-        "template":                 _TEMPLATE,
-        "sectiontemplate":          _SECTIONTEMPLATE,
-        "cleantemplate":            _SECTIONTEMPLATE,
-        "style":                    _STYLE,
-        "meta":                     _META,
-        "settings":                 "",
-        "replaceEmDash":            True,
-        "removeComments":           True,
-        "removeLineComments":       False,
-        #"definitionsOnly":          False,
+    _default_parameters = {
+        "title":                        "Document",
+        "_template":                    _TEMPLATE,
+        "sectiontemplate":              "default",
+        "_sectiontemplate_default":     _SECTIONTEMPLATE_DEFAULT,
+        "_sectiontemplate_clean":       _SECTIONTEMPLATE_CLEAN,
+        "_sectiontemplates":            _SECTIONTEMPLATES,
+        "_style":                       _STYLE,
+        "_meta":                        _META,
+        "_settings":                    "",
+        "_replaceEmDash":               True,
+        "_removeComments":              True,
+        "_removeLineComments":          False,
+        #"_definitionsOnly":            False,
     }
 
     def __init__(s, **kwargs):
         s.p = {} # parameter
-        for param, value in s._parameters.items():
+
+        # read the paramters from kwargs or, if not present there, from _default_parameters
+        for param, value in s._default_parameters.items():
             try:
                 s.p[param] = kwargs[param]
             except KeyError:
                 s.p[param] = value
 
+        # process the section templates
+        s.p['_sectiontemplate_default'] = s._processSectionTemplates(s.p['_sectiontemplate_default'])
+        s.p['_sectiontemplate_clean']   = s._processSectionTemplates(s.p['_sectiontemplate_clean'])
+            # removes the comment lines from those templates
+        templates_dict = s._processSectionTemplates(s.p['_sectiontemplates'])
+            # returns OrderedDict ( template_name: template_string )
+        for k,v in templates_dict.items(): s.p['_sectiontemplate_'+k] = v
+        s.p['_sectiontemplatenames'] = tuple(['default', 'clean'] + [k for k in templates_dict])
+
+
         s._parse = mm.Parser(
                         fieldParsers            = s._fieldParsers,
-                        replaceEmDash           = s.p['replaceEmDash'],
-                        removeComments          = s.p['removeComments'],
-                        removeLineComments      = s.p['removeLineComments'],
-                        #definitionsOnly         = s.p['definitionsOnly'],
+                        replaceEmDash           = s.p['_replaceEmDash'],
+                        removeComments          = s.p['_removeComments'],
+                        removeLineComments      = s.p['_removeLineComments'],
+                        #definitionsOnly         = s.p['_definitionsOnly'],
         )
-        s.read_settings(s.p['settings']);
+        s._readSettings(s.p['_settings']);
 
     def updateParameters(s, **kwargs):
         """
@@ -211,6 +319,52 @@ class PageBuilder():
                 #raise ValueError("Unknown parameter", param, tuple(s.p.keys()))
             s.p[param] = value
 
+    @staticmethod
+    def _processSectionTemplates(sectionTemplates):
+        """
+        processes the SECTIONTEMPLATES file
+
+        :sectionsTemplate:      the sections template file
+        :returns:               OrderedDict(templateName: template_str)     if bona fide sectionS file
+                                template_str                                if no dividers present
+
+        The sections template has the following format:
+
+            preamble text that is discarded
+
+            ================== SECTIONTYPE: sectionname1 =======================
+            // comment lines
+            <content of section sectionname1>
+
+            ================== SECTIONTYPE: sectionname2 =======================
+            <content of section sectionname2>
+        """
+
+        # remove comment lines
+        sectionTemplates = re.sub("^//.*$", "", sectionTemplates, flags=re.MULTILINE)
+
+        # split along the divider lines
+        regex = "^[\s=]+SECTIONTYPE:\s*([a-zA-Z_0-9]*?)[\s=]+$"
+        sectionTemplates = re.split(regex, sectionTemplates, flags=re.MULTILINE)
+            # this returns a list of the following form
+            #
+            #     [preamable, sectionName1, sectionTemplate1, sectionName2, ...]
+            #
+            # where preamble is the text before the first divider and might or
+            # might not be present
+
+        # no dividers found? -> must be a flat section file
+        if len(sectionTemplates) == 1:
+            return sectionTemplates[0]
+
+        # otherwise discard the preamble
+        if len(sectionTemplates) % 2 == 1: del sectionTemplates[0]
+
+        # convert to OrderedDict
+        sectionTemplates = OrderedDict(_grouper(sectionTemplates, 2))
+
+        return sectionTemplates
+
 
     def _processMetaMarkdown(s, md, createHtml=True):
         """
@@ -219,7 +373,7 @@ class PageBuilder():
         return s._parse(md, createHtml=createHtml)
 
 
-    def _process_template(s, template_name, specific_params=None):
+    def _processTemplate(s, template_name, specific_params=None):
         """
         processes template strings eg for the page template or style
 
@@ -229,28 +383,37 @@ class PageBuilder():
         :returns:           the template with parameters filled in
         """
         if specific_params is None: specific_params = {}
+
+        # process the :parameters: tag
+        # the paramters tag allows to define certain parameters in the template
+        # that have default values but that can be overwritten with parameters
+        # provided either in the defaults or in the template itself
         result = mm.parsetext(s.p[template_name], fieldParsers={"parameters": mm.parse_dict})
         template = result.body
+
+        # overwrite the parameters in the template with those in s.p if defined there
         params = result.meta.get("parameters", {})
         params = {
             k: s.p[k] if k in s.p else v
             for k,v in params.items()
         }
-        specific_params.update(params)
-        if specific_params:
+
+        # overwrite / amend the parameters from the page-specific paramters
+        params.update(specific_params)
+        if params:
             try:
-                template = template.format(**specific_params)
+                template = template.format(**params)
             except KeyError as e:
-                print(specific_params.keys()) # QQQQQ
-                raise
+                #print("QQQQQ PARAMS KEYS", params.keys())
+                #raise
                 print ("\nTEMPLATE ERROR\n=================")
-                print ("defined items: ", tuple(specific_params.keys()))
+                print ("defined items: ", tuple(params.keys()))
                 print ("missing item:  ", e)
                 print ()
                 template = "KEY ERROR: {} ".format(e)
         return template
 
-    def read_settings(s, settings):
+    def _readSettings(s, settings):
         """
         process the settings file (overwrites current settings)
 
@@ -273,7 +436,7 @@ class PageBuilder():
 
         :returns:   the style to be used with all parameters resolved
         """
-        return s._process_template("style")
+        return s._processTemplate("_style")
 
     def _template(s, **params):
         """
@@ -284,7 +447,7 @@ class PageBuilder():
                     such as body text and style
         :returns:   the final page HTML including <html>, <head> and <body> tags
         """
-        return s._process_template("template", params)
+        return s._processTemplate("_template", params)
 
     def _sectionTemplate(s, **params):
         """
@@ -300,31 +463,35 @@ class PageBuilder():
         in the mmd field) would be run through a markdown filter with the
         result being stored in params['desc']
         """
-        sectionTemplateName = params.get("sectiontemplate", "sectiontemplate").strip()
-            # the files can define another section template name that can be
-            # used to render one particular file; for the time being there
-            # is no api however to provide additional templates, so the only
-            # useful choices are "sectiontemplate" (which is the template
-            # from the _SECTIONTEMPLATE.html file) and "cleantemplate" which
-            # is the default template that renders the body only
+        sectionTemplateName = params.get("sectiontemplate", "default")
+        sectionTemplateName = "_sectiontemplate_"+sectionTemplateName.strip()
+            # params['_sectiontemplate'] contains the (short) name of the template
+            # this is prepended with "_sectiontemplate_" to get the key under which it is stored
+            # eg the default template will be under "_sectiontemplate_default"
 
-        params1 = {}
+        # process all meta data fields, applying filters
+        # for example :fieldname|md: applies the markdown filter to the contents
+        # of the field, and stores the result as :fieldname:
+        params1 = {} # can't update the paramter dict during iteration
         for k,v in params.items():
 
+            # markdown filter -> convert from markdown, wrap in div
             if k[-3:] == "|md":
                 params1[k[0:-3]] = \
                     "<div class='ff ff-md ff-{1}'>{0}</div>".format(mm.parse_markdown(v),k[0:-3])
 
+            # pre filter -> wrap in pre
             elif k[-4:] == "|pre":
                 params1[k[0:-4]] = \
                     "<pre class='ff ff-pre ff-{1}'>{0}</pre>".format(v, k[0:-4])
 
+            # pre filter -> wrap in div
             elif k[-4:] == "|div":
                 params1[k[0:-4]] = \
                     "<div class='ff ff-div ff-{1}'>{0}</div>".format(v, k[0:-4])
 
         params.update(params1)
-        return s._process_template(sectionTemplateName, params)
+        return s._processTemplate(sectionTemplateName, params)
 
     def createHtmlPageFromHtmlAndMeta(s, bodyHtml, meta=None):
         """
@@ -336,7 +503,7 @@ class PageBuilder():
         title = meta.get("title", "")
         metaTags = (
                 s.p['meta'].format(field=field, value=value)
-                for field, value in meta.get("meta", {}).items()
+                for field, value in meta.get("_meta", {}).items()
         )
 
         return s._template(
@@ -363,6 +530,9 @@ class PageBuilder():
 
         # return the results
         MMD = namedtuple("mmdData", "pageHtml sectionHtml metaData metaDataRaw")
+        metaData['_body'] = processed.body
+            # also store the body as a meta data field
+            # TODO: should this happen in the meta markdown class?
         return MMD(html, sectionHtml, metaData, processed.meta)
 
     def __call__(s, *args, **kwargs):
@@ -376,8 +546,8 @@ pagebuilder = PageBuilder()
 
 
 
-#######################################################################
-## PAGE BUILDER MAIN
+########################################################################################
+## CLASS BUILDER MAIN
 
 import http.server as hs
 import sys
@@ -410,7 +580,8 @@ class PageBuilderMain():
     STYLE               = _STYLE
     SETTINGS            = _SETTINGS
     TEMPLATE            = _TEMPLATE
-    SECTIONTEMPLATE     = _SECTIONTEMPLATE
+    SECTIONTEMPLATE     = _SECTIONTEMPLATE_DEFAULT
+    SECTIONTEMPLATES    = _SECTIONTEMPLATES
     INDEX               = _INDEX
     INDEXLINE           = _INDEXLINE
     EXAMPLE             = _EXAMPLE
@@ -419,6 +590,7 @@ class PageBuilderMain():
     FNSETTINGS          = "_SETTINGS"
     FNTEMPLATE          = "_TEMPLATE.html"
     FNSECTIONTEMPLATE   = "_SECTIONTEMPLATE.html"
+    FNSECTIONTEMPLATES  = "_SECTIONTEMPLATES.html"
     FNEXAMPLE           = "EXAMPLE.md"
 
     DESCRIPTION = """
@@ -437,9 +609,11 @@ converted to an em-dash. and `//` indicates a comment.
 
 The executable looks for three special files in the directory, notably
 
-- _TEMPLATE.html    -- the base template used
-- _STYLE.css        -- style information
-- _SETTINGS         -- a settings file (meta markdown format)
+- _TEMPLATE.html            -- the base template used
+- _STYLE.css                -- style information
+- _SETTINGS                 -- a settings file (meta markdown format)
+- _SECTIONTEMPLATE.html     -- the file specifying the default section template
+- _SECTIONTEMPLATES.html    -- the file specifying additional section templates
 
 Example files can be generated using the `--save-templates` flag
 (attention: files already present are overwritten without warning).
@@ -530,12 +704,18 @@ Version v{}
             sectiontemplate = s.SECTIONTEMPLATE
 
         try:
+            with open(s.FNSECTIONTEMPLATES, "r") as f: sectiontemplates = f.read()
+            print ("reading local", s.FNSECTIONTEMPLATES)
+        except FileNotFoundError:
+            sectiontemplates = s.SECTIONTEMPLATES
+
+        try:
             with open(s.FNSETTINGS, "r") as f: settings = f.read()
             print ("reading local", s.FNSETTINGS)
         except FileNotFoundError:
             settings = ""
 
-        return (style, template, sectiontemplate, settings)
+        return (style, template, sectiontemplate, sectiontemplates, settings)
 
     def runServer(s, port, bind=None, handler=None, server=None, protocol=None):
         """
@@ -576,11 +756,13 @@ Version v{}
         print ("Style               =>", s.FNSTYLE)
         print ("Template            =>", s.FNTEMPLATE)
         print ("Section Template    =>", s.FNSECTIONTEMPLATE)
+        print ("Section Templates   =>", s.FNSECTIONTEMPLATES)
         print ("Settings            =>", s.FNSETTINGS)
         print ("Example             =>", s.FNEXAMPLE)
         with open(s.FNSTYLE, "w") as f:             f.write(s.STYLE)
         with open(s.FNTEMPLATE, "w") as f:          f.write(s.TEMPLATE)
         with open(s.FNSECTIONTEMPLATE, "w") as f:   f.write(s.SECTIONTEMPLATE)
+        with open(s.FNSECTIONTEMPLATES, "w") as f:  f.write(s.SECTIONTEMPLATES)
         with open(s.FNSETTINGS, "w") as f:          f.write(s.SETTINGS)
         with open(s.FNEXAMPLE, "w") as f:           f.write(s.EXAMPLE)
 
@@ -741,14 +923,16 @@ Version v{}
         no_style    = kwargs.get("no_style", False)
         join        = kwargs.get("join", False)
 
-        style, template, sectiontemplate, settings = s.readStyleTemplateSettings()
+        style, template, sectiontemplate, sectiontemplates, settings = s.readStyleTemplateSettings()
         if no_style: style = ""
         builder = PageBuilder(
-                    style=style,
-                    template=template,
-                    sectiontemplate=sectiontemplate,
-                    settings=settings
+                    _style                      = style,
+                    _template                   = template,
+                    _sectiontemplate_default    = sectiontemplate,
+                    _sectiontemplates           = sectiontemplates,
+                    _settings                   = settings
         )
+        print("Available section template names:", builder.p['_sectiontemplatenames'])
 
         files, html_list, meta_data_list, meta_data_raw_list, full_meta = \
                                     s.readAndProcessInputFiles(mdfiles, builder)
