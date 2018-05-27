@@ -69,3 +69,13 @@
 :dictfield|dct:         key1 := value1,
                         key2 := value2,
                         key3 := value3,
+
+:tablefield|tbl:        v11, v12, v13, v14
+                        v21, v22, v23, v24
+
+:linefield|ln:          this is line 1
+                        this is line 2
+
+:csvfield|csv:          item 1, item 2, item 3,
+                        item 4, item 5, and
+                        item 6
