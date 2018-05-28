@@ -257,6 +257,36 @@ def _grouper(iterable, n=2, fillvalue=None):
 class PageBuilder():
     """
     converts metamarkdown files into self-contained and styled html files
+
+    all parameters are optional
+    :data:          a dict of data items to be added unconditionally to the
+                    parameters; this overwrites template defaults, but not
+                    settings defaults or directly defined fields
+    :<params>:      only parameters present in `_default_parameters` will be
+                    added, all others are ignored
+
+    this is the subset of parameters that makes sense; look up
+    `_default_parameters` for all
+
+                        _style                      = style,
+                        _template                   = template,
+                        _sectiontemplate_default    = sectiontemplate,
+                        _sectiontemplates           = sectiontemplates,
+                        _settings                   = settings,
+                        _data                       = data,
+
+    :_style:                    the css data to be embedded (aka _STYLE.css)
+    :_template:                 the overall page template to be used (aka _TEMPLATE.html)
+    :_sectiontemplate_default:  the default section template (aka _SECTIONTEMPLATE.html)
+    :_sectiontemplates:         the section templates (aka _SECTIONTEMPLATES.html)
+    :_settings:                 the settings to be used (aka _SETTINGS)
+
+    :_replaceEmDash:            whether to replace '--' with em dash
+    :_removeComments:           whether to remove all comments
+    :_removeLineComments:       whether to remove line comments
+
+    NOTE: those parameters might not currently work, but feel free to make
+    them work...
     """
 
     _fieldParsers = {
@@ -301,6 +331,10 @@ class PageBuilder():
             # returns OrderedDict ( template_name: template_string )
         for k,v in templates_dict.items(): s.p['_sectiontemplate_'+k] = v
         s.p['_sectiontemplatenames'] = tuple(['default', 'clean'] + [k for k in templates_dict])
+
+        # add items `data` parameter to defaults if present
+        if "_data" in kwargs:
+            for k,v in kwargs["_data"].items(): s.p[k] = v
 
 
         s._parse = mm.Parser(
@@ -635,6 +669,7 @@ class PageBuilderMain():
 
     FNSTYLE             = "_STYLE.css"
     FNSETTINGS          = "_SETTINGS"
+    FNDATA              = "_DATA"
     FNTEMPLATE          = "_TEMPLATE.html"
     FNSECTIONTEMPLATE   = "_SECTIONTEMPLATE.html"
     FNSECTIONTEMPLATES  = "_SECTIONTEMPLATES.html"
@@ -726,11 +761,11 @@ Version v{}
         return ap
 
 
-    def readStyleTemplateSettings(s):
+    def readStyleTemplateSettingsData(s):
         """
         look for style, template and settings files on a number of locations
 
-        :returns:       tuple(style, template, sectiontemplate, settings)
+        :returns:       tuple(style, template, sectiontemplate, sectiontemplate, settings, data)
         """
         try:
             with open(s.FNSTYLE, "r") as f: style = f.read()
@@ -762,7 +797,23 @@ Version v{}
         except FileNotFoundError:
             settings = ""
 
-        return (style, template, sectiontemplate, sectiontemplates, settings)
+        try:
+            with open(s.FNDATA+".json", "r") as f: data_json = f.read()
+            print ("reading local", s.FNDATA+".json")
+            data_json = json.loads(data_json)
+        except FileNotFoundError:
+            data_json = {}
+
+        try:
+            with open(s.FNDATA+".yaml", "r") as f: data_yaml = f.read()
+            print ("reading local", s.FNDATA+".yaml")
+            data_yaml = yaml.safe_load(data_yaml)
+        except FileNotFoundError:
+            data_yaml = {}
+
+        data_json.update(data_yaml)
+
+        return (style, template, sectiontemplate, sectiontemplates, settings, data_json)
 
     def runServer(s, port, bind=None, handler=None, server=None, protocol=None):
         """
@@ -839,8 +890,8 @@ Version v{}
             fnbase, _ = os.path.splitext(fn)
             fnhtml = fnbase+".html"
             files.append( (fn, fnbase, fnhtml) )
-            with open(fn, "r") as f: mmd = f.read()
-            html, inner_html, meta_data, meta_data_raw = builder(mmd)
+            with open(fn, "r") as f: file_contents_mmd = f.read()
+            html, inner_html, meta_data, meta_data_raw = builder(file_contents_mmd)
             html_list.append(inner_html)
             meta_data['_filename'] = fn
             meta_data['_filenamebase'] = fnbase
@@ -970,14 +1021,15 @@ Version v{}
         no_style    = kwargs.get("no_style", False)
         join        = kwargs.get("join", False)
 
-        style, template, sectiontemplate, sectiontemplates, settings = s.readStyleTemplateSettings()
+        style, template, sectiontemplate, sectiontemplates, settings, data =  s.readStyleTemplateSettingsData()
         if no_style: style = ""
         builder = PageBuilder(
                     _style                      = style,
                     _template                   = template,
                     _sectiontemplate_default    = sectiontemplate,
                     _sectiontemplates           = sectiontemplates,
-                    _settings                   = settings
+                    _settings                   = settings,
+                    _data                       = data,
         )
         print("Available section template names:", builder.p['_sectiontemplatenames'])
 
