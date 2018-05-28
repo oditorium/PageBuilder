@@ -1,0 +1,3 @@
+../../src/pagebuilder.py -j 000_title.md 100_chapter.md 110_chapter.md 120_chapter.md
+./process.py
+../../src/pagebuilder.py -j 000_title.md 100_chapter.md 110_chapter.md 120_chapter.md

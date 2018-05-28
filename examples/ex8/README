@@ -1,0 +1,21 @@
+# Example 8 -- Data
+
+## Usage
+
+- run `convert` to convert the files
+- run `serve` to serve the current directory
+- run `clean` to remove generated files
+
+## Description
+
+This example how the `_DATA.json` and `_DATA.yaml` files can be used to
+process data from the files and re-inject it. The general strategy in this
+case is to run the conversion twice:
+
+    (1) run PageBuilder conversion
+    (2) run data analysis script on PageBuilder output
+    (3) run PageBuilder conversion again
+
+I is very important that the conversion in (1) does not fall over if there
+is not yet any data output. The best stratgy to achieve this is to provide
+pre-sets for the data fields.
