@@ -429,9 +429,10 @@ class PageBuilder():
             result = mm.parsetext(s.p[template_name], fieldParsers={"defaults": mm.parse_dict})
         except KeyError as e:
             missing_template_name = str(e).rsplit("_", maxsplit=1)[1][:-1]
-            print ("\nMISSING-TEMPLATE ERROR\n======================")
+            print ("\nMISSING TEMPLATE ERROR\n======================")
+            print ("file:     ", params['_filename'])
             print ("missing:  ", missing_template_name)
-            print ("defined: ", s.p['_sectiontemplatenames'])
+            print ("defined:  ", s.p['_sectiontemplatenames'])
             print ()
             return "ERROR: Missing Sectiontemplate {}".format(missing_template_name)
         template = result.body
@@ -453,8 +454,12 @@ class PageBuilder():
                 #print("QQQQQ PARAMS KEYS", params.keys())
                 #raise
                 print ("\nTEMPLATE ERROR\n==============")
+                #print (params.keys())
+                #print (s.p.keys())
+                print ("file:     ", params['_filename'])
+                print ("template: ", template_name)
                 print ("missing:  ", e)
-                print ("defined: ", tuple(params.keys()))
+                print ("defined:  ", tuple(params.keys()))
                 print ()
                 template = "KEY ERROR: {} ".format(e)
         return template
@@ -587,18 +592,20 @@ class PageBuilder():
             **meta                          # that's meta data that might be rendered
         )
 
-    def createHtmlPageFromMetaMarkdown(s, metaMarkdown):
+    def createHtmlPageFromMetaMarkdown(s, metaMarkdown, **additionalMeta):
         """
         creates an entire HtmlPage based on the meta markdown
 
-        :returns:   Namedtuple(html, innerHtml, metaData, metaDataRaw)
+        :metaMarkdown:      the metaMarkdown data
+        :additionalMeta:    additional parameters to be added to the meta data
+        :returns:           Namedtuple(html, innerHtml, metaData, metaDataRaw)
         """
 
         # process the meta markdown file with the settings body (links!)
         processed = s._processMetaMarkdown(metaMarkdown+s._settings_body)
 
-        # combine the meta data with the settings meta data (former has priority)
-        metaData = contract([s._settings_meta, processed.meta])
+        # combine the meta data (processed > settings > additional)
+        metaData = contract([additionalMeta, s._settings_meta, processed.meta])
 
         # apply filters
         metaData = s.applyFilters(metaData)
@@ -799,15 +806,15 @@ Version v{}
 
         try:
             with open(s.FNDATA+".json", "r") as f: data_json = f.read()
-            print ("reading local", s.FNDATA+".json")
             data_json = json.loads(data_json)
+            print ("reading local", s.FNDATA+".json", tuple(data_json.keys()))
         except FileNotFoundError:
             data_json = {}
 
         try:
             with open(s.FNDATA+".yaml", "r") as f: data_yaml = f.read()
-            print ("reading local", s.FNDATA+".yaml")
             data_yaml = yaml.safe_load(data_yaml)
+            print ("reading local", s.FNDATA+".yaml", tuple(data_yaml.keys()))
         except FileNotFoundError:
             data_yaml = {}
 
@@ -891,7 +898,11 @@ Version v{}
             fnhtml = fnbase+".html"
             files.append( (fn, fnbase, fnhtml) )
             with open(fn, "r") as f: file_contents_mmd = f.read()
-            html, inner_html, meta_data, meta_data_raw = builder(file_contents_mmd)
+            html, inner_html, meta_data, meta_data_raw = builder(
+                                                file_contents_mmd,
+                                                _filename=fn,
+                                                _filenamebase=fnbase
+            )
             html_list.append(inner_html)
             meta_data['_filename'] = fn
             meta_data['_filenamebase'] = fnbase
