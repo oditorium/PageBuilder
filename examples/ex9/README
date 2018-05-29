@@ -1,0 +1,17 @@
+# Example 9 -- Processing Single-Sheet Data
+
+## Usage
+
+- run `convert` to convert the files
+- run `serve` to serve the current directory
+- run `clean` to remove generated files
+
+## Description
+
+This example shows how data can be post-processed and re-injected into the
+page where it came from.
+
+IMPORTANT: Any fields read from _DATA must be defined have default values in
+the  template, not only so that the first calculation does not fall over,
+but also that they are picked up at all. ONLY PARAMETERS THAT HAVE DEFAULT
+VALUES WILL BE READ FROM THE _DATA.

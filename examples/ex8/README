@@ -16,6 +16,12 @@ case is to run the conversion twice:
     (2) run data analysis script on PageBuilder output
     (3) run PageBuilder conversion again
 
-I is very important that the conversion in (1) does not fall over if there
-is not yet any data output. The best stratgy to achieve this is to provide
-pre-sets for the data fields.
+Any fields read from _DATA must be defined have default values in the 
+template, not only so that the first calculation does not fall over, but
+also that they are picked up at all. ONLY PARAMETERS THAT HAVE DEFAULT
+VALUES WILL BE READ FROM THE _DATA.
+
+
+    :defaults:          aggr_data =>        DATA
+
+    {aggr_data}

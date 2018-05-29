@@ -369,7 +369,9 @@ class PageBuilder():
 
         # add items `data` parameter to defaults if present
         if "_data" in kwargs:
-            for k,v in kwargs["_data"].items(): s.p[k] = v
+            for k,v in kwargs["_data"].items():
+                #print ("ADDING DATA ITEM QQQ:", k, v)
+                s.p[k] = v
 
 
         s._parse = mm.Parser(
@@ -1103,6 +1105,7 @@ Version v{}
                     _data                       = data,
         )
         print("Available section template names:", builder.p['_sectiontemplatenames'])
+        print("Data:", data)
 
         files, html_list, meta_data_list, meta_data_raw_list, full_meta = \
                                     s.readAndProcessInputFiles(mdfiles, builder)

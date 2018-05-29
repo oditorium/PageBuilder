@@ -52,6 +52,10 @@ files is as follows:
 // FIELDS:              doctitle
 // DESCRIPTION:         renders titlepage including data
 
+// IMPORTANT: all aggregate parameter MUST get default values,
+// otherwise the will not be picked up at all, even if defined
+// in the _DATA file
+
 :defaults:      sum_magicnums =>        DATA,
                 aggr_magicwords =>      DATA,
                 toc =>                  DATA,
