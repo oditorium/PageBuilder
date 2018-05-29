@@ -20,6 +20,8 @@ import re
 ########################################################################################
 ## STRING CONSTANTS
 
+DICTSEP = "=>"
+
 _TEMPLATE = """
 <html>
 
@@ -124,10 +126,10 @@ files is as follows:
 """
 
 _STYLE = """
-:defaults:      baseFont        := sans-serif,
-                baseFontsize    := 28px,
-                baseLineheight  := 1.5,
-                baseWidth       := 900px
+:defaults:      baseFont        => sans-serif,
+                baseFontsize    => 28px,
+                baseLineheight  => 1.5,
+                baseWidth       => 900px
 
 #body {{
     width: {baseWidth};
@@ -178,16 +180,16 @@ div.ff-docabstract {{font-size: 80%; padding: 50px 20%;}}
 """.strip()
 
 _SETTINGS = """
-:meta:          author  :=  Stefan LOESCH,
-                license :=  MIT
+:meta:          author  =>  Stefan LOESCH,
+                license =>  MIT
 
 [google]:https://www.google.com
 """
 
 _EXAMPLE = """
 :title:         Lorem Ipsum | Stefan LOESCH
-:meta:          author  :=  Stefan LOESCH,
-                license :=  MIT
+:meta:          author  =>  Stefan LOESCH,
+                license =>  MIT
 :tags:          lorem, ipsum
 
 # Lorem Ipsum
@@ -220,6 +222,7 @@ tag_
 - joint document [document](document.html)
 - composite meta data [yaml](document.yaml) [json](document.json)
 - raw meta data [yaml](document.r.yaml) [json](document.r.json)
+- processed data [yaml](_DATA.yaml) [json](_DATA.json)
 
 ## Component Files
 {}
@@ -426,7 +429,8 @@ class PageBuilder():
 
         # process the :defaults: tag
         try:
-            result = mm.parsetext(s.p[template_name], fieldParsers={"defaults": mm.parse_dict})
+            parser = lambda s: mm.parse_dict(s, sep=DICTSEP)
+            result = mm.parsetext(s.p[template_name], fieldParsers={"defaults": parser})
         except KeyError as e:
             missing_template_name = str(e).rsplit("_", maxsplit=1)[1][:-1]
             print ("\nMISSING TEMPLATE ERROR\n======================")
@@ -535,7 +539,7 @@ class PageBuilder():
 
             # dict filter -> interpret as (ordered) dict
             elif k[-4:] == "|dct":
-                params1[k[0:-4]] = mm.parse_dict(v)
+                params1[k[0:-4]] = mm.parse_dict(v, sep=DICTSEP)
 
             # dict filter -> interpret as table (tuple of tuples)
             elif k[-4:] == "|tbl":
@@ -713,11 +717,11 @@ for link references). Meta data in the files intelligently overwrites
 meta data from the templates. For example, the meta field `:meta:`
 generates meta tags in the html. If we have in the settings file
 
-    :meta:          field0 := value0, field1 := value0
+    :meta:          field0 => value0, field1 => value0
 
 and in the processed file
 
-    :meta:          field1 := value1, field2 := value1
+    :meta:          field1 => value1, field2 => value1
 
 then the meta tags generated are
 
