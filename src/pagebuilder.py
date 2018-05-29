@@ -1095,6 +1095,89 @@ Version v{}
             no_style    = args.no_style,
         )
 
+########################################################################################
+## CLASS SERIALIZER
+import yaml
+import json
+
+class Serializer():
+    """
+    common interface wrapper around various serialization/deserialization methods
+
+    the following parameters influence the serialization/deserialization process
+
+    :safe:      if True, deserialization is _safe_, ie does not allow code
+                execution (that's the intention at least...)
+    :output:    which serializer to use (Serializer.JSON, Serializer,YAML)
+    """
+
+    JSON = 0x01
+    YAML = 0x02
+
+    safe =          True
+    output =        YAML
+
+
+    class DeserializationError (RuntimeError): pass
+    class ParameterError (RuntimeError): pass
+
+    def __init__(s, **params):
+
+        s.params = {}
+        s.params.update(params)
+
+
+    def p(s, name, params=None, default=None):
+        """
+        gets the value of param `name`
+
+        first looks in `params`, then in `s.params`, then uses `default`
+        :name:      the name of the params to get
+        :params:    dict of params that are searched first
+        :default:   the default value if not found
+
+        """
+        try:
+            return params[name]
+        except (KeyError, TypeError):
+            try:
+                return s.params[name]
+            except KeyError:
+                return getattr(s, name, default)
+
+    def writes(s, obj, **params):
+        """
+        write (aka serialize) an object to a string
+
+        :obj:       the object to be serialised
+        :returns:   the string representation of the object
+        """
+        output = s.p("output", params)
+        if output == s.JSON:
+            return json.dumps(obj)
+        elif output == s.YAML:
+            return yaml.dump(obj, default_flow_style=False)
+        else:
+            raise s.ParameterError("output", output)
+        return None
+
+    def reads(s, objstr, **params):
+        """
+        read (aka deserialize) an object from a string
+
+        :objstr:    the string serialisation of the object
+        :returns:   the object
+        """
+        try:
+            return json.loads(objstr)
+        except:
+            try:
+                return yaml.safe_load(objstr)
+            except:
+                raise s.DeserializationError(objstr, ["json", "yaml"])
+
+
+
 
 
 #######################################################################
