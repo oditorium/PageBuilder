@@ -8,6 +8,21 @@ Licensed under the MIT License
 """
 __version__ = "2.2"
 
+# NOTE: The _processTemplate function is the key function that combines all
+# the different parameters and it is a bit of a mess, because parameters
+# can come from the following area:
+#
+#   - the meta-markdown file itself (using a :tag:)
+#   - the SETTINGS file (again, using a :tag:)
+#   - the _DATA.json or _DATA.yaml files, or both
+#   - the parameters provided to PageBuilder calls
+#   - the parameters provided to PageBuilder object initialisation
+#   - the section template file, using the :defaults: tag
+#
+# To put it politely, this is all a bit of a mess, and the parameter
+# provision could be stream-line a bit. But hey, it works, and there
+# are more important things to do...
+
 import metamarkdown as mm
 import markdown as mdwn
 from transformer import contract
@@ -19,6 +34,23 @@ import re
 
 ########################################################################################
 ## STRING CONSTANTS
+
+def _removeIndent(s):
+    """
+    removes the first line indent of a (stripped) string from all lines
+
+    :s:         the string whose indent is removed
+    :returns:   the string with indent removed
+    """
+    s = s.strip("\n")
+    if s == "": return ""
+    lines = s.splitlines()
+    line1 = lines[0]
+    if line1 == "": return s
+    firstNonSpace = 0
+    while line1[firstNonSpace] == " ": firstNonSpace+=1
+    if firstNonSpace == 0: return s
+    return "\n".join(l[firstNonSpace:] for l in lines)
 
 DICTSEP = "=>"
 
@@ -433,15 +465,27 @@ class PageBuilder():
             result = mm.parsetext(s.p[template_name], fieldParsers={"defaults": parser})
         except KeyError as e:
             missing_template_name = str(e).rsplit("_", maxsplit=1)[1][:-1]
-            print ("\nMISSING TEMPLATE ERROR\n======================")
-            print ("file:     ", params['_filename'])
-            print ("missing:  ", missing_template_name)
-            print ("defined:  ", s.p['_sectiontemplatenames'])
-            print ()
-            return "ERROR: Missing Sectiontemplate {}".format(missing_template_name)
+            error = _removeIndent("""
+            ======================
+            MISSING TEMPLATE ERROR
+            ======================
+            file:       {}
+            missing:    {}
+            defined:    {}
+            """).format(
+                    specific_params.get("_filename", None),
+                    missing_template_name,
+                    s.p['_sectiontemplatenames']
+            )
+            print(error)
+            return("<pre>"+error+"</pre>")
+
         template = result.body
 
         # overwrite the parameters in the template with those in s.p if defined there
+        # (this is particularly how parameters defined in the _DATA files get included,
+        # and this also makes that parameters that are only present in `s.p` but not
+        # here via :defaults: will NOT be considered)
         params = result.meta.get("defaults", {})
         #if params is None: params = {}
         params = {
@@ -451,21 +495,33 @@ class PageBuilder():
 
         # overwrite / amend the parameters from the page-specific paramters
         params.update(specific_params)
+
+        # include the page-specific parameters from the data file
+        try:
+            file_params = s.p["_select"][params["_filename"]]
+            print("Using file-specific params:", params["_filename"], file_params)
+            params.update(file_params)
+        except:
+            pass
+
+
+
+        # finally apply the parameters to the template
         if params:
             try:
                 template = template.format(**params)
             except KeyError as e:
-                #print("QQQQQ PARAMS KEYS", params.keys())
-                #raise
-                print ("\nTEMPLATE ERROR\n==============")
-                #print (params.keys())
-                #print (s.p.keys())
-                print ("file:     ", params['_filename'])
-                print ("template: ", template_name)
-                print ("missing:  ", e)
-                print ("defined:  ", tuple(params.keys()))
-                print ()
-                template = "KEY ERROR: {} ".format(e)
+                error = _removeIndent("""
+                ==============
+                TEMPLATE ERROR
+                ==============
+                file:       {}
+                template:   {}
+                missing:    {}
+                defined:    {}
+                """).format(params['_filename'], template_name, e, tuple(params.keys()))
+                print(error)
+                template = "<pre>"+error+"</pre>"
         return template
 
     def _readSettings(s, settings):
