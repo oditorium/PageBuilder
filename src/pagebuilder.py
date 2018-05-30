@@ -580,36 +580,59 @@ class PageBuilder():
         params1 = {} # can't update the paramter dict during iteration
         for k,v in params.items():
 
-            # markdown filter -> convert from markdown, wrap in div
-            if k[-3:] == "|md":
-                params1[k[0:-3]] = \
-                    "<div class='ff ff-md ff-{1}'>{0}</div>".format(mm.parse_markdown(v),k[0:-3])
+            try:
+                try:
+                    field, filter = k.split("|")
+                except ValueError:
+                    continue
 
-            # pre filter -> wrap in pre
-            elif k[-4:] == "|pre":
-                params1[k[0:-4]] = \
-                    "<pre class='ff ff-pre ff-{1}'>{0}</pre>".format(v, k[0:-4])
+                # markdown filter -> convert from markdown, wrap in div
+                if filter == "md":
+                    params1[field] = \
+                        "<div class='ff ff-md ff-{1}'>{0}</div>".format(mm.parse_markdown(v),k[0:-3])
 
-            # pre filter -> wrap in div
-            elif k[-4:] == "|div":
-                params1[k[0:-4]] = \
-                    "<div class='ff ff-div ff-{1}'>{0}</div>".format(v, k[0:-4])
+                # pre filter -> wrap in pre
+                elif filter == "pre":
+                    params1[field] = \
+                        "<pre class='ff ff-pre ff-{1}'>{0}</pre>".format(v, k[0:-4])
 
-            # dict filter -> interpret as (ordered) dict
-            elif k[-4:] == "|dct":
-                params1[k[0:-4]] = mm.parse_dict(v, sep=DICTSEP)
+                # pre filter -> wrap in div
+                elif filter == "div":
+                    params1[field] = \
+                        "<div class='ff ff-div ff-{1}'>{0}</div>".format(v, k[0:-4])
 
-            # dict filter -> interpret as table (tuple of tuples)
-            elif k[-4:] == "|tbl":
-                params1[k[0:-4]] = mm.parse_table(v)
+                # dict filter -> interpret as (ordered) dict
+                elif filter == "dct":
+                    params1[field] = mm.parse_dict(v, sep=DICTSEP)
 
-            # lines filter -> split string by lines
-            elif k[-3:] == "|ln":
-                params1[k[0:-3]] = mm.parse_lines(v)
+                # dict filter -> interpret as table (tuple of tuples)
+                elif filter == "tbl":
+                    params1[field] = mm.parse_table(v)
 
-            # csv filter -> split at commas
-            elif k[-4:] == "|csv":
-                params1[k[0:-4]] = mm.parse_csv(v)
+                # lines filter -> split string by lines
+                elif filter == "ln":
+                    params1[field] = mm.parse_lines(v)
+
+                # csv filter -> split at commas (tuple)
+                elif filter == "csv":
+                    params1[field] = mm.parse_csv(v)
+
+                else:
+                    raise RuntimeError("Unkown filter '{}'".format(filter))
+
+            except BaseException as e:
+                #raise
+                message = _removeIndent("""
+                ============
+                FILTER ERROR
+                ============
+                file:       {}
+                field:      {}
+                value:      {}
+                error:      {}
+                """).format(params['_filename'], k, v, e)
+                print (message)
+                params1[field] = "<pre>"+message+"</pre>"
 
         params.update(params1)
         return params
@@ -1105,7 +1128,7 @@ Version v{}
                     _data                       = data,
         )
         print("Available section template names:", builder.p['_sectiontemplatenames'])
-        print("Data:", data)
+        print("Data:", tuple(data.keys()))
 
         files, html_list, meta_data_list, meta_data_raw_list, full_meta = \
                                     s.readAndProcessInputFiles(mdfiles, builder)
