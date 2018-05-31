@@ -68,6 +68,22 @@
 
                         (it can of course contain <strong>tags</strong>)
 
+:dictfield|dct:         key1 => value1,
+                        key2 => value2
+
+:tablefield|tbl:        1, 2, 3
+                        4, 5, 6
+                        7, 8, 9
+
+:csvfield|csv:          1, 2, 3, 4,
+                        5, 6, 7,
+                        8, 9,
+                        10
+
+:linesfield|ln:         Line 1
+                        Line 2
+                        Line 3
+
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque ut leo
 tincidunt, tincidunt neque nec, fermentum tellus. Morbi commodo maximus sem,
