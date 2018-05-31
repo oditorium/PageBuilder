@@ -28,6 +28,7 @@ import markdown as mdwn
 from transformer import contract
 from collections import namedtuple
 from collections import OrderedDict
+from copy import deepcopy
 import json
 import yaml
 import re
@@ -370,7 +371,6 @@ class PageBuilder():
         # add items `data` parameter to defaults if present
         if "_data" in kwargs:
             for k,v in kwargs["_data"].items():
-                #print ("ADDING DATA ITEM QQQ:", k, v)
                 s.p[k] = v
 
 
@@ -603,6 +603,9 @@ class PageBuilder():
 
                 # dict filter -> interpret as (ordered) dict
                 elif filter == "dct":
+                    #dct = mm.parse_dict(v, sep=DICTSEP)
+                    #dct = {k:v for k,v in dct.items()}
+                    #params1[field] = dct
                     params1[field] = mm.parse_dict(v, sep=DICTSEP)
 
                 # dict filter -> interpret as table (tuple of tuples)
@@ -988,13 +991,23 @@ Version v{}
                                                 _filename=fn,
                                                 _filenamebase=fnbase
             )
+            #try:
+            #    print("====>ID QQQ", meta_data.get("id"))
+            #    print("====>SCORING QQQ", meta_data.get("scoring").get("Attractiveness"))
+            #except: pass
+
             html_list.append(inner_html)
             meta_data['_filename'] = fn
             meta_data['_filenamebase'] = fnbase
             meta_data_raw['_filename'] = fn
             meta_data_raw['_filenamebase'] = fnbase
-            meta_data_list.append(meta_data)
-            meta_data_raw_list.append(meta_data_raw)
+            meta_data_list.append(deepcopy(meta_data))
+            #for d in meta_data_list:
+            #    try:
+            #        print("-----> QQQ", d.get("scoring").get("Attractiveness"))
+            #        print("----->ID QQQ", d.get("id"))
+            #    except: pass
+            meta_data_raw_list.append(deepcopy(meta_data_raw))
             full_meta = contract([meta_data, full_meta])
                 # this applies the meta data from the right, so oldest entry wins!
                 # (in particular, settings always win!)
@@ -1002,6 +1015,10 @@ Version v{}
             if save:
                 print("converting {0} to html (output: {1})".format(fn, fnhtml))
                 with open(fnhtml, "w") as f: f.write(html)
+
+        #for d in meta_data_list:
+        #    try: print("QQQ", d.get("scoring").get("Attractiveness"))
+        #    except: pass
 
         return (files, html_list, meta_data_list, meta_data_raw_list, full_meta)
 
@@ -1136,6 +1153,9 @@ Version v{}
         if join or 'join' in full_meta or 'jointfilename' in full_meta:
             document_html, = s.createJointDocument(builder, html_list, full_meta)
 
+        #for d in meta_data_list:
+        #    try: print("QQQ", d.get("scoring").get("Attractiveness"))
+        #    except: pass
         s.saveMetaData(meta_data_list, meta_data_raw_list,
             saveYAML=True, saveJSON=True, saveAggr=True, saveRaw=False)
 
