@@ -39,7 +39,7 @@ __version__ = "1.0b1"
 
 
 import re
-import Markdown as mdwn
+import markdown as mdwn
 from collections import OrderedDict
 from types import SimpleNamespace
 from datetime import datetime
