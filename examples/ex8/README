@@ -1,4 +1,4 @@
-# Example 8 -- Data
+# Example 8 -- Post-processing and re-integrating data
 
 ## Usage
 
@@ -16,7 +16,7 @@ case is to run the conversion twice:
     (2) run data analysis script on PageBuilder output
     (3) run PageBuilder conversion again
 
-Any fields read from _DATA must be defined have default values in the 
+Any fields read from _DATA must be defined have default values in the
 template, not only so that the first calculation does not fall over, but
 also that they are picked up at all. ONLY PARAMETERS THAT HAVE DEFAULT
 VALUES WILL BE READ FROM THE _DATA.

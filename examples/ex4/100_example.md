@@ -66,9 +66,9 @@
 
                         (it can of course contain <strong>tags</strong>)
 
-:dictfield|dct:         key1 := value1,
-                        key2 := value2,
-                        key3 := value3,
+:dictfield|dct:         key1 => value1,
+                        key2 => value2,
+                        key3 => value3,
 
 :tablefield|tbl:        v11, v12, v13, v14
                         v21, v22, v23, v24
@@ -79,3 +79,10 @@
 :csvfield|csv:          item 1, item 2, item 3,
                         item 4, item 5, and
                         item 6
+
+:brkfield|brk:          The break field converts single line breaks in simple
+                        spaces, but preserves (double) line breaks, or rather,
+                        converts them into br tags.
+
+                        This means that, when converted to html, paragraphs
+                        can be distinguished.

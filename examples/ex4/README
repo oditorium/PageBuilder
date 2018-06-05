@@ -1,4 +1,4 @@
-# Example 4 -- Section Template Tips and Tricks
+# Example 4 -- Using filters in section templates
 
 ## Usage
 
@@ -8,5 +8,6 @@
 
 ## Description
 
-This example deals with special fields in a file using a section template
-(see example 3 first).
+This example shows how to apply filters to meta fields and how to use the
+filtered (=converted) results in section templates (see example 3 first to
+understand section templates).
