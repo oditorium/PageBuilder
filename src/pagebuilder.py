@@ -620,6 +620,10 @@ class PageBuilder():
                 elif filter == "csv":
                     params1[field] = mm.parse_csv(v)
 
+                # brk filter -> preserve (double) line breaks
+                elif filter == "brk":
+                    params1[field] = mm.parse_breaks(v)
+
                 else:
                     raise RuntimeError("Unkown filter '{}'".format(filter))
 
