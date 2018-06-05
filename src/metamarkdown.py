@@ -156,6 +156,19 @@ def parse_markdown(s):
     """
     return mdwn.markdown(_replace_emdash(s))
 
+def parse_breaks(s):
+    """
+    parser for text with line breaks but that should not be parsed into p tags
+
+    :s:         the input string to parse
+    :returns:   the string with \n\n replace with <br/> and \n with space
+
+    NOTE: to parse text into p tags simply parse as markdown.
+    """
+    return s.strip().replace("\n\n", "\n<br/>\n").replace("\n", " ")
+
+
+
 
 ################################################################################
 ## FILTERS
