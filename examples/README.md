@@ -9,5 +9,5 @@ The sub directories contain the following examples
 5. Multiple Section Templates
 6. Title and Chapter templates
 7. Template Defaults
-8. Post-processing and re-integrating data
+8. Post-processing and re-integrating data; ToC
 9. Processing data and re-injecting it into the source sheet

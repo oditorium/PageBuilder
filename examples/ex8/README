@@ -1,4 +1,4 @@
-# Example 8 -- Post-processing and re-integrating data
+# Example 8 -- Post-processing and re-integrating data; ToC
 
 ## Usage
 
@@ -9,7 +9,10 @@
 ## Description
 
 This example how the `_DATA.json` and `_DATA.yaml` files can be used to
-process data from the files and re-inject it. The general strategy in this
+process data from the files and re-inject it. In particular it shows how
+to create a Table of Contents
+
+The general strategy in this
 case is to run the conversion twice:
 
     (1) run PageBuilder conversion
