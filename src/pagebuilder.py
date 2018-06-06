@@ -629,6 +629,10 @@ class PageBuilder():
                 elif filter == "brk":
                     params1[field] = mm.parse_breaks(v)
 
+                # now filter -> expects format string, returns current time
+                elif filter == "now":
+                    params1[field] = mm.parse_now(v)
+
                 else:
                     raise RuntimeError("Unkown filter '{}'".format(filter))
 
