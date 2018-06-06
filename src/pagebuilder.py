@@ -317,9 +317,9 @@ class PageBuilder():
                         _data                       = data,
 
     :_style:                    the css data to be embedded (aka _STYLE.css)
-    :_template:                 the overall page template to be used (aka _TEMPLATE.html)
-    :_sectiontemplate_default:  the default section template (aka _SECTIONTEMPLATE.html)
-    :_sectiontemplates:         the section templates (aka _SECTIONTEMPLATES.html)
+    :_template:                 the overall page template to be used (aka _TEMPLATE)
+    :_sectiontemplate_default:  the default section template (aka _SECTIONTEMPLATE)
+    :_sectiontemplates:         the section templates (aka _SECTIONTEMPLATES)
     :_settings:                 the settings to be used (aka _SETTINGS)
 
     :_replaceEmDash:            whether to replace '--' with em dash
@@ -774,9 +774,9 @@ class PageBuilderMain():
     FNSTYLE             = "_STYLE.css"
     FNSETTINGS          = "_SETTINGS"
     FNDATA              = "_DATA"
-    FNTEMPLATE          = "_TEMPLATE.html"
-    FNSECTIONTEMPLATE   = "_SECTIONTEMPLATE.html"
-    FNSECTIONTEMPLATES  = "_SECTIONTEMPLATES.html"
+    FNTEMPLATE          = "_TEMPLATE"
+    FNSECTIONTEMPLATE   = "_SECTIONTEMPLATE"
+    FNSECTIONTEMPLATES  = "_SECTIONTEMPLATES"
     FNEXAMPLE           = "EXAMPLE.md"
 
     DESCRIPTION = """
@@ -798,8 +798,8 @@ The executable looks for three special files in the directory, notably
 - _TEMPLATE.html            -- the base template used
 - _STYLE.css                -- style information
 - _SETTINGS                 -- a settings file (meta markdown format)
-- _SECTIONTEMPLATE.html     -- the file specifying the default section template
-- _SECTIONTEMPLATES.html    -- the file specifying additional section templates
+- _SECTIONTEMPLATE          -- the file specifying the default section template
+- _SECTIONTEMPLATES         -- the file specifying additional section templates
 
 Example files can be generated using the `--save-templates` flag
 (attention: files already present are overwritten without warning).
