@@ -12,7 +12,9 @@
 <tr> <th>Line Field</th>    <td><pre>{linefield}</pre></td>     </tr>
 <tr> <th>CSV Field</th>     <td><pre>{csvfield}</pre></td>      </tr>
 <tr> <th>Brk Field</th>     <td>{brkfield}</td>                 </tr>
-
+<tr> <th>Now Field</th>     <td>{nowfield}</td>                 </tr>
+<tr> <th>Now Field</th>     <td>{nowfield1}</td>                </tr>
+<tr> <th>Fields</th>        <td>{nowsplainer}</td>                </tr>
 <table>
 <hr/>
 

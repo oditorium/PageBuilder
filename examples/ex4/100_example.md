@@ -86,3 +86,17 @@
 
                         This means that, when converted to html, paragraphs
                         can be distinguished.
+
+:nowfield|now:          -
+:nowfield1|now:         %e %B %Y
+:nowsplainer|pre:       %a, %A, %w      weekday abbreviated / full / number
+                        %d, %e          day of the month zero/blank padded
+                        %b, %B          month as name abbreviated / full
+                        %Y, %y          year with/without century
+                        %H, %I          zero-padded hour in 24/12 hour format
+                        %k, %l          blank-padded hour in 24/12 hour format
+                        %p, %P          am/pm indicator in lowercase/uppercase
+                        %M, %S          minutes and seconds
+                        %c, %x, %X      full datetime / date / time according to locale
+                        %F              iso date format
+                        %Z, %z          time zone name / UTC offset
