@@ -86,8 +86,8 @@ _TEMPLATE = """
 
 _SECTIONTEMPLATE_DEFAULT="""
 // This is the `default` section template that is applied to all files that
-// not explicitly define a section type using the :sectiontype:  meta tag
-// (or that use `:sectiontype: default`)
+// not explicitly define a section type using the :sectiontemplate:  meta tag
+// (or that use `:sectiontemplate: default`)
 
 {body}
 """
@@ -96,7 +96,7 @@ _SECTIONTEMPLATE_CLEAN="""
 // This is the `clean` section template. It can not usually be changed
 // unless explitly overwritten in the `_SECTIONTEMPLATES` (plural) file, and
 // it is meant to be a template that only renders the body text of a  meta
-// markdown file. It can be applied using the `:sectiontype: clean` meta
+// markdown file. It can be applied using the `:sectiontemplate: clean` meta
 // tag, and is mostly useful when the default section template has been
 // changed because of the presence `_SECTIONTEMPLATE` (singular) file.
 
@@ -120,10 +120,10 @@ files is as follows:
 
 - _SECTIONTEMPLATE changes the `default` template, meaning it is applied to
   all files that do not explicitly specify another template using the
-  `:sectiontype:` type, eg `:sectiontype: clean`
+  `:sectiontemplate:` type, eg `:sectiontemplate: clean`
 
 - _SECTIONTEMPLATES changes other named templates. They have to explicitly
-  activated in a files using the `:sectiontype: <type>` meta tag, where
+  activated in a files using the `:sectiontemplate: <type>` meta tag, where
   `<type>` corresponds to the term after SECTIONTYPE in the dividers below
 
 - The _SECTIONTEMPLATES file can define the `default` template by using
@@ -139,11 +139,16 @@ files is as follows:
 //                      the body content is not rendered at all and can
 //                      for example be used for comments
 
+:defaults:              doctitle =>     DEFINE IN :doctitle: METATAG,
+                        docauthor =>    DEFINE IN :docauthor: METATAG,
+                        docdate =>      DEFINE IN :docdate: METATAG,
+                        docabstract =>  DEFINE IN :docabstract: METATAG,
+
 <h1>{doctitle}</h1>
 
 <div class='title title-author'>    {docauthor}     </div>
 <div class='title title-date'>      {docdate}       </div>
-<div class='title title-abstract'>{docabstract}     </div>
+<div class='title title-abstract'>  {docabstract}   </div>
 
 
 
