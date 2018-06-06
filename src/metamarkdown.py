@@ -167,6 +167,36 @@ def parse_breaks(s):
     """
     return s.strip().replace("\n\n", "\n<br/>\n").replace("\n", " ")
 
+from datetime import datetime
+
+def parse_now(s):
+    """
+    parses Python data format and returns the current datetime in that format
+
+    :s:         the input string to parse (datetime format string)
+    :returns:   the current datetime formatted according the format string in s
+
+    For Python date format see
+    <https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior>
+
+    Interesting ones are (details might depend on the system)
+
+        %a, %A, %w      weekday abbreviated / full / number
+        %d, %e          day of the month zero/blank padded
+        %b, %B          month as name abbreviated / full
+        %Y, %y          year with/without century
+        %H, %I          zero-padded hour in 24/12 hour format
+        %k, %l          blank-padded hour in 24/12 hour format
+        %p, %P          am/pm indicator in lowercase/uppercase
+        %M, %S          minutes and seconds
+        %c, %x, %X      full datetime / date / time according to locale
+        %F              iso date format
+        %Z, %z          time zone name / UTC offset
+    """
+    s = s.strip()
+    if s == "-": s = "%a %e %b %Y, %k:%M"
+    return datetime.now().strftime(s)
+
 
 
 
