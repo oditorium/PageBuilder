@@ -70,9 +70,6 @@
                         key2 => value2,
                         key3 => value3,
 
-:tablefield|tbl:        v11, v12, v13, v14
-                        v21, v22, v23, v24
-
 :linefield|ln:          this is line 1
                         this is line 2
 
@@ -88,7 +85,9 @@
                         can be distinguished.
 
 :nowfield|now:          -
+
 :nowfield1|now:         %e %B %Y
+
 :nowsplainer|pre:       %a, %A, %w      weekday abbreviated / full / number
                         %d, %e          day of the month zero/blank padded
                         %b, %B          month as name abbreviated / full
@@ -100,3 +99,20 @@
                         %c, %x, %X      full datetime / date / time according to locale
                         %F              iso date format
                         %Z, %z          time zone name / UTC offset
+
+:tablefield|tbl:        ,   c1, c2, c3
+                        r1, 1,  2,  3
+                        r2, 4,  5,  6
+                        r3, 7,  8,  9
+
+:tablefieldh|tblh:      c1,     c2,     c3
+                        4,      5,      6
+                        7,      8,      9
+
+:tablefieldv|tblv:      r1, 1,  4,  7
+                        r2, 2,  5,  8
+                        r3, 3,  6,  9
+
+:tablefieldtd|tbltd:    1,  2,  3
+                        4,  5,  6
+                        7,  8,  9

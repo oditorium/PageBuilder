@@ -44,11 +44,21 @@ pre {{
     font-size: 75%;
 }}
 table.section {{border-collapse: separate; width: 90%; border-spacing: 10px; }}
-table.section td, table.section th {{font-size: 120%; text-align: left; }}
-table.section td{{padding-left: 20px; border-left: 5px solid #ccc; }}
+table.section > tr > td, table.section > tr > th {{font-size: 120%; text-align: left; }}
+table.section >tr > td{{padding-left: 20px; border-left: 5px solid #ccc; }}
 
 div.ff-mdfield {{color: red; }}
 pre.ff {{background-color: inherit; }}
 div.ff-divfield {{color: blue; }}
 div.ff-div strong {{background-color: yellow; }}
 div.ff-divfield2 {{color: green; }}
+
+table.parsetablehtml {{border-collapse: collapse;}}
+table.parsetablehtml td, table.parsetablehtml th {{
+    border: 1px solid black;
+    padding: 5px 10px;
+}}
+table.tablefield    {{background-color: #ffe;}}
+table.tablefieldv   {{background-color: #efe;}}
+table.tablefieldh   {{background-color: #eff;}}
+table.tablefieldtd  {{background-color: #fef;}}
