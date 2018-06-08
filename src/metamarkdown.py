@@ -48,6 +48,8 @@ from datetime import datetime
 ################################################################################
 ## PARSERS
 ################################################################################
+# TODO: convert to objects?
+
 def parse_date_ymd(s):
     """
     parser for a date field (format Ymd)
@@ -102,6 +104,64 @@ def parse_table(s):
     :returns:   tuple(('v11', 'v12', 'v13', 'v14'), ...)
     """
     return tuple(map(lambda s2: tuple(map(lambda s3: s3.strip(), s2.split(','))), s.strip().split('\n')))
+
+def parse_table_html(s, first_row_th=True, first_col_th=False, cls=None):
+    """
+    parser for csv table, creates html
+
+    :s:             the input string to parse, which should be of the format
+                        v11, v12, v13, v14
+                        v21, v22, v23, v24
+                        v31, v32, v33, v34
+    :first_row_th:  if True, use th for first row tags
+    :first_col_th:  if True, use td for first col tags
+    :returns:       table html
+    """
+    if cls is None: cls = ""
+    tag_r1 = "th" if first_row_th else "td"
+    tag_c1 = "th" if first_col_th else "td"
+    tag_r1c1 = "th" if first_row_th or first_col_th else "td"
+
+    s_tuple = parse_table(s)
+    #print(s_tuple)
+    #print(tuple(enumerate(s_tuple)))
+    rows = (
+               (
+                    row,                                      # row
+                    tag_r1c1 if rownum == 0 else tag_c1,      # tag col1
+                    tag_r1   if rownum == 0 else "td",        # tag col not 1
+                )
+                for rownum, row in enumerate(s_tuple)
+    )
+    #print(tuple(rows))
+    #return "QQQ"
+
+    def row_html(row_tuple, tagc1, tagnc1):
+        """
+        converts tuple of fields into html
+
+        :row_tuple: the per-field data
+        :tagc1: the tag to use for column 1
+        :tagnc1: the tag to use for the other columns
+        """
+        fields = (
+           "<{tag}>{content}</{tag}>".format(
+               tag = tagc1 if colnum==0 else tagnc1,
+               content = field)
+
+            for colnum, field in enumerate(row_tuple)
+        )
+        return "<tr>\n{}\n</tr>".format("\n".join(fields))
+
+    rows = (
+        row_html(*r)
+        for r in rows
+    )
+    html = "<table class='parsetablehtml {1}'>\n{0}\n</table>".format("\n".join(rows), cls)
+    #print(html)
+    return html
+
+
 
 def parse_dict(s, sep=None):
     """

@@ -613,10 +613,6 @@ class PageBuilder():
                     #params1[field] = dct
                     params1[field] = mm.parse_dict(v, sep=DICTSEP)
 
-                # dict filter -> interpret as table (tuple of tuples)
-                elif filter == "tbl":
-                    params1[field] = mm.parse_table(v)
-
                 # lines filter -> split string by lines
                 elif filter == "ln":
                     params1[field] = mm.parse_lines(v)
@@ -624,6 +620,21 @@ class PageBuilder():
                 # csv filter -> split at commas (tuple)
                 elif filter == "csv":
                     params1[field] = mm.parse_csv(v)
+
+                # tbl filter -> split at commas, render as html table (only td)
+                elif filter == "tbl":
+                    params1[field] = mm.parse_table_html(v,
+                            first_row_th=False, first_col_th=False, cls=field)
+
+                # tblh filter -> split at commas, render as horizontal html table (1st row th)
+                elif filter == "tblh":
+                    params1[field] = mm.parse_table_html(v,
+                            first_row_th=True, first_col_th=False, cls=field)
+
+                # tblv filter -> split at commas, render as vertical html table (1st col th)
+                elif filter == "tblv":
+                    params1[field] = mm.parse_table_html(v,
+                            first_row_th=False, first_col_th=True, cls=field)
 
                 # brk filter -> preserve (double) line breaks
                 elif filter == "brk":
