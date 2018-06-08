@@ -1,0 +1,11 @@
+# Example 10 -- Inline templates and the table filters
+## Usage
+
+- run `convert` to convert the files
+- run `serve` to serve the current directory
+- run `clean` to remove generated files
+
+## Description
+
+This example shows how to use documents or pages with inline templates. It
+also shows how to work with the table filters.

@@ -1,0 +1,62 @@
+:defaults:      baseFont        => sans-serif,
+                baseFontsize    => 28px,
+                baseLineheight  => 1.5,
+                baseWidth       => 900px
+
+#body {{
+    width: {baseWidth};
+    margin-left: 50px;
+    margin-top: 50px;
+    font-family: {baseFont};
+    font-size: {baseFontsize};
+    line-height: {baseLineheight};
+}}
+
+h1 {{font-size: 200%;}}
+h2 {{font-size: 130%;}}
+h3 {{font-size: 110%; text-decoration: underline; }}
+h4 {{font-size: 100%; font-style: italic;}}
+h5 {{font-size: 80%; font-weight: normal; font-style: italic;}}
+
+h1 {{text-align: center;}}
+h2 {{
+    border-bottom: 3px solid black; border-top: 3px solid black;
+    background-color: #eee;
+    page-break-before: always;
+}}
+
+a {{font-size: 75%;}}
+blockquote {{
+    font-size: 80%;
+    font-style: italic;
+    border-left: 3px solid #aaa;
+    padding-left: 10px;
+    margin-left: 100px;
+}}
+code {{
+    display: inline-block;
+    padding: 1px 5px;
+    background-color: #eee;
+    font-size: 70%;
+}}
+pre {{
+    background-color: #eee;
+    font-size: 75%;
+}}
+table.section {{border-collapse: separate; width: 90%; border-spacing: 10px; }}
+table.section td, table.section th {{font-size: 120%; text-align: left; }}
+table.section td{{padding-left: 20px; border-left: 5px solid #ccc; }}
+.title {{text-align: center;}}
+.ff-docabstract h1 {{font-size: 100%; }}
+div.ff-docabstract {{font-size: 80%; padding: 50px 20%;}}
+
+table.parsetablehtml {{border-collapse: collapse;}}
+table.parsetablehtml td, table.parsetablehtml th {{
+    border: 1px solid black;
+    padding: 5px 10px;
+}}
+
+table.tableh  {{background-color: #ffe;}}
+table.tablev  {{background-color: #efe;}}
+table.table1  {{background-color: #eff;}}
+table.tabletd {{background-color: #fef;}}
