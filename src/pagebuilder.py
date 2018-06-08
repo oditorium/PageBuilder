@@ -465,28 +465,37 @@ class PageBuilder():
         :returns:           the template with defaults filled in
         """
         if specific_params is None: specific_params = {}
+        #print("SPECIFIC PARAMS:", specific_params.keys())
+        #print("template name:", template_name)
+        #print("_sectiontemplate:", specific_params.get('_sectiontemplate', "==NONE=="))
 
-        # process the :defaults: tag
-        try:
-            parser = lambda s: mm.parse_dict(s, sep=DICTSEP)
-            result = mm.parsetext(s.p[template_name], fieldParsers={"defaults": parser})
-        except KeyError as e:
-            missing_template_name = str(e).rsplit("_", maxsplit=1)[1][:-1]
-            error = _removeIndent("""
-            ======================
-            MISSING TEMPLATE ERROR
-            ======================
-            file:       {}
-            missing:    {}
-            defined:    {}
-            """).format(
-                    specific_params.get("_filename", None),
-                    missing_template_name,
-                    s.p['_sectiontemplatenames']
-            )
-            print(error)
-            return("<pre>"+error+"</pre>")
+        # retrieve the template (first from :_sectiontemplate:, then from :sectiontemplate: tag)
+        # :sectiontemplate: is the _name_ of the template
+        # :_sectiontemplate: is the actual template (has precedence)
+        template = specific_params.get("_sectiontemplate", None)
+        if template is None or template_name == "_template":
+            template = s.p.get(template_name, None)
+            if template is None:
+                #missing_template_name = str(e).rsplit("_", maxsplit=1)[1][:-1]
+                error = _removeIndent("""
+                ======================
+                MISSING TEMPLATE ERROR
+                ======================
+                file:       {}
+                missing:    {}
+                defined:    {}
+                """).format(
+                        specific_params.get("_filename", None),
+                        template_name,
+                        #missing_template_name,
+                        s.p['_sectiontemplatenames']
+                )
+                print(error)
+                return("<pre>"+error+"</pre>")
 
+        # process the :defaults: tag (which for an inline template is a tag in a tag ¯\_(ツ)_/¯)
+        parser = lambda str1: mm.parse_dict(str1, sep=DICTSEP)
+        result = mm.parsetext(template, fieldParsers={"defaults": parser})
         template = result.body
 
         # overwrite the parameters in the template with those in s.p if defined there
@@ -621,8 +630,13 @@ class PageBuilder():
                 elif filter == "csv":
                     params1[field] = mm.parse_csv(v)
 
-                # tbl filter -> split at commas, render as html table (only td)
+                # tbl filter -> split at commas, render as html table (1st row and col th)
                 elif filter == "tbl":
+                    params1[field] = mm.parse_table_html(v,
+                            first_row_th=True, first_col_th=True, cls=field)
+
+                # tbl filter -> split at commas, render as html table (only td)
+                elif filter == "tbltd":
                     params1[field] = mm.parse_table_html(v,
                             first_row_th=False, first_col_th=False, cls=field)
 
