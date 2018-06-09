@@ -163,13 +163,17 @@ files is as follows:
 
 
 =========================== SECTIONTYPE: chapter  ===========================
-// FIELDS:              body, heading
+// FIELDS:              body, heading, type
 // DESCRIPTION:         renders a document chapter, starting with an h2
 //                      heading from the field :heading:
 
-<h2>{heading}</h2>
+:defaults:              type =>     chapter
 
+<h2 class='{type}'>{heading}</h2>
+
+<div class='{type}'>
 {body}
+</div>
 
 
 =========================== SECTIONTYPE: subchapter  ========================
@@ -177,9 +181,13 @@ files is as follows:
 // DESCRIPTION:         renders a document sub chapter, starting with an h3
 //                      heading from the field :subheading:
 
-<h2>{subheading}</h2>
+:defaults:              type =>     chapter
 
+<h2 class='{type}'>{subheading}</h2>
+
+<div class='{type}'>
 {body}
+</div>
 
 
 =========================== SECTIONTYPE: element  ===========================
