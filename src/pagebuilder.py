@@ -316,7 +316,7 @@ tag_
 ## Component Files
 {}
 """
-_INDEXLINE = """- [{0[0]}]({0[2]})"""
+_INDEXLINE = """- [{0[1]}]({0[2]})"""
 
 
 ############################################################
@@ -1079,6 +1079,7 @@ Version v{}
 
         for fn in mdfiles:
             fnbase, _ = os.path.splitext(fn)
+            _, fnbase = os.path.split(fnbase)
             fnhtml = fnbase+".html"
             files.append( (fn, fnbase, fnhtml) )
             with open(fn, "r") as f: file_contents_mmd = f.read()
