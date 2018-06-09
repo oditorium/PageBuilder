@@ -170,6 +170,32 @@ files is as follows:
 <h2>{heading}</h2>
 
 {body}
+
+
+=========================== SECTIONTYPE: subchapter  ========================
+// FIELDS:              body, subheading
+// DESCRIPTION:         renders a document sub chapter, starting with an h3
+//                      heading from the field :subheading:
+
+<h2>{subheading}</h2>
+
+{body}
+
+
+=========================== SECTIONTYPE: element  ===========================
+// FIELDS:              body, subheading
+// DESCRIPTION:         renders a particular element (eg a table that is defined
+//                      using one the the :...|tbl_: filters) preceded by the
+//                      body (which can be empty)
+
+:defaults:              element =>      DEFINE IN :element: METATAG,
+                        pre =>          ,
+                        post =>         ,
+
+{pre}
+{element}
+{post}
+{body}
 """
 
 
