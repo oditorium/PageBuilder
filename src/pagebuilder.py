@@ -539,8 +539,10 @@ class PageBuilder():
         # :sectiontemplate: is the _name_ of the template
         # :_sectiontemplate: is the actual template (has precedence)
         template = specific_params.get("_sectiontemplate", None)
+        _template_name = "==LOCAL=="
         if template is None or template_name == "_template":
-            template = s.p.get(template_name, None)
+            _template_name = template_name
+            template = s.p.get(_template_name, None)
             if template is None:
                 #missing_template_name = str(e).rsplit("_", maxsplit=1)[1][:-1]
                 error = _removeIndent("""
@@ -552,7 +554,7 @@ class PageBuilder():
                 defined:    {}
                 """).format(
                         specific_params.get("_filename", None),
-                        template_name,
+                        _template_name,
                         #missing_template_name,
                         s.p['_sectiontemplatenames']
                 )
@@ -601,7 +603,7 @@ class PageBuilder():
                 template:   {}
                 missing:    {}
                 defined:    {}
-                """).format(params['_filename'], template_name, e, tuple(params.keys()))
+                """).format(params['_filename'], _template_name, e, tuple(params.keys()))
                 print(error)
                 template = "<pre>"+error+"</pre>"
         return template
