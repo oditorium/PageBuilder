@@ -34,7 +34,7 @@ import yaml
 import re
 
 ########################################################################################
-## STRING CONSTANTS
+## TEMPLATES AND OTHER STRING CONSTANTS
 
 def _removeIndent(s):
     """
@@ -55,6 +55,8 @@ def _removeIndent(s):
 
 DICTSEP = "=>"
 
+############################################################
+## OVERALL TEMPLATE
 _TEMPLATE = """
 <html>
 
@@ -84,6 +86,9 @@ _TEMPLATE = """
 </html>
 """.strip()
 
+
+############################################################
+## DEFAULT SECTION TEMPLATE
 _SECTIONTEMPLATE_DEFAULT="""
 // This is the `default` section template that is applied to all files that
 // not explicitly define a section type using the :sectiontemplate:  meta tag
@@ -92,6 +97,9 @@ _SECTIONTEMPLATE_DEFAULT="""
 {body}
 """
 
+
+############################################################
+## CLEAN SECTION TEMPLATE
 _SECTIONTEMPLATE_CLEAN="""
 // This is the `clean` section template. It can not usually be changed
 // unless explitly overwritten in the `_SECTIONTEMPLATES` (plural) file, and
@@ -103,6 +111,9 @@ _SECTIONTEMPLATE_CLEAN="""
 {body}
 """
 
+
+############################################################
+## OTHER SECTION TEMPLATES
 _SECTIONTEMPLATES="""
 This is the preamble of the _SECTIONTEMPLATES file, ie the section before
 the first divider. This section is discarded, so it can contain arbitrary
@@ -133,9 +144,8 @@ files is as follows:
 
 
 ========================== SECTIONTYPE: titlepage  ==========================
-// SECTIONTYPE:         title
-// FIELDS:              doctitle, docauthor, docdate, docabstract
-// DESCRIPTION:         renders a title page for the documents; note that
+// :FIELDS:             doctitle, docauthor, docdate, docabstract
+// :DESCRIPTION:        renders a title page for the documents; note that
 //                      the body content is not rendered at all and can
 //                      for example be used for comments
 
@@ -153,7 +163,6 @@ files is as follows:
 
 
 =========================== SECTIONTYPE: chapter  ===========================
-// SECTIONTYPE:         chapter
 // FIELDS:              body, heading
 // DESCRIPTION:         renders a document chapter, starting with an h2
 //                      heading from the field :heading:
@@ -162,6 +171,10 @@ files is as follows:
 
 {body}
 """
+
+
+############################################################
+## DEFAULT CSS FILE
 
 _STYLE = """
 :defaults:      baseFont        => sans-serif,
@@ -217,6 +230,9 @@ table.section td{{padding-left: 20px; border-left: 5px solid #ccc; }}
 div.ff-docabstract {{font-size: 80%; padding: 50px 20%;}}
 """.strip()
 
+
+############################################################
+## SETTINGS EXAMPLE FILE
 _SETTINGS = """
 :meta:          author  =>  Stefan LOESCH,
                 license =>  MIT
@@ -224,6 +240,9 @@ _SETTINGS = """
 [google]:https://www.google.com
 """
 
+
+############################################################
+## EXAMPLE FILE
 _EXAMPLE = """
 :title:         Lorem Ipsum | Stefan LOESCH
 :meta:          author  =>  Stefan LOESCH,
@@ -244,10 +263,9 @@ consectetur bibendum ante tincidunt ac. Sed volutpat
 quam condimentum magna ornare pulvinar.
 """.strip()
 
-_META = """
-<meta {field}="{value}">
-""".strip()
 
+############################################################
+## INDEX FILE TEMPLATE
 _INDEX = """
 # Index
 
@@ -266,6 +284,13 @@ tag_
 {}
 """
 _INDEXLINE = """- [{0[0]}]({0[2]})"""
+
+
+############################################################
+## SUNDRY
+_META = """
+<meta {field}="{value}">
+""".strip()
 
 
 ########################################################################################
