@@ -392,7 +392,7 @@ class PageBuilder():
         "title":            mm.parse_str,
         "tags":             mm.parse_csv,
         "keywords":         mm.parse_csv,
-        "meta":             mm.parse_dict,
+        "meta":             lambda x: mm.parse_dict(x, sep=DICTSEP),
         "headinglevel":     int,
     }
 
