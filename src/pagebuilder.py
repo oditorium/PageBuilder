@@ -225,9 +225,16 @@ pre {{
 table.section {{border-collapse: separate; width: 90%; border-spacing: 10px; }}
 table.section td, table.section th {{font-size: 120%; text-align: left; }}
 table.section td{{padding-left: 20px; border-left: 5px solid #ccc; }}
+
 .title {{text-align: center;}}
 .ff-docabstract h1 {{font-size: 100%; }}
 div.ff-docabstract {{font-size: 80%; padding: 50px 20%;}}
+
+table.parsetablehtml {{border-collapse: collapse;}}
+table.parsetablehtml td, table.parsetablehtml th {{
+    border: 1px solid black;
+    padding: 5px 10px;
+}}
 """.strip()
 
 
