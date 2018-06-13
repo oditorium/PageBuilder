@@ -4,4 +4,5 @@ cd $DIR
 
 cp src/*.py ~/bin
 ln -s ~/bin/pagebuilder.py ~/bin/pagebuilder
+ln -s ~/bin/pagebuilder.py ~/bin/toHTML
 
