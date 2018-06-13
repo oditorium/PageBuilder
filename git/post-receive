@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# ***** POST RECEIVE HOOK ******
+# copy to .git/hooks in a remote server repo
+# whenever you push to branch 'convert' it runs 'convert1'
+# convert1 will usually be the same as convert, except it won't
+# rely on PATH being set for the logged in user
+# it is expected to be at the root directory of the repo
+# if this is not the case, change the line 'cd ..''
+
+# https://www.digitalocean.com/community/tutorials/how-to-use-git-hooks-to-automate-development-and-deployment-tasks
+
+echo "***** POST RECEIVE HOOK *****"
+
+while read oldrev newrev ref
+do
+    if [[ $ref =~ .*/convert$ ]];
+    then
+        echo "Received 'convert' and running conversion."
+        echo "Result is written to branch 'output'"
+        cd ..
+        pwd
+        unset GIT_DIR
+        git checkout convert
+        git branch -D output
+        git checkout -b output
+        ./convert1
+        git add -f *.html *.json *.yaml
+        git commit -m "...conversion..."
+    else
+        echo "Received '$ref'. Push to 'convert' to run conversion."
+    fi
+done
+:
