@@ -307,7 +307,11 @@ def _definitionsOnly(s, execute=0):
 
 def _starts_with_space(line, return_on_blank=True):
     """
-    returns true if line starts with space (return_on_blank if empty)
+    returns true if line starts with space
+
+    :line:                  the line to be examined
+    :return_on_blank:       what to return if line == ""
+    :returns:               True if starts with space, False else
     """
     try: return line[0] == ' '
     except IndexError: return return_on_blank
@@ -335,7 +339,10 @@ def _ziprange(alist, ix):
 
 def _num_leading_spaces(line):
     """
-    returns the number of leading spaces in a line
+    number of leading spaces
+
+    :line:          the line to be examined
+    :returns:       number of leading spaces in line
     """
     try:
         ix = 0
@@ -347,7 +354,11 @@ def _num_leading_spaces(line):
 
 def _remove_leading_spaces(lines):
     """
-    removes leading spaces from group of lines (the number removed depends on first line)
+    removes leading spaces from group of lines
+
+    :lines:         an iterable of lines
+    :returns:       lines with leading spaces removed (number of spaces
+                    removed depends on spaces in first line)
     """
     if not lines: return lines
     num_leading_spaces = _num_leading_spaces(lines[0])
@@ -394,7 +405,10 @@ class Parser():
     ## APPLY FILTERS
     def _applyFilters(s, doc):
         """
-        applies all selected filters
+        applies all selected filters to document
+
+        :doc:           the document
+        :returns:       the document with filters apply
         """
         for afilter, aparam in s.filterSettings.items():
             try:
@@ -411,6 +425,11 @@ class Parser():
         """
         parses meta markdown document into a custom structure
 
+        :doc:           the document to parse
+        :returns:       tuple(tags, body)
+        :tags:          OrderedDict of tags and raw (text) values
+        :body:          body text
+
 
         Document Definition
         -------------------
@@ -423,11 +442,6 @@ class Parser():
 
             Body Area
 
-
-        :Returns: tuple(tags, body)
-
-            tags       - OrderedDict of tags and raw (text) values
-            body       - body text
 
 
         """
