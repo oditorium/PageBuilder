@@ -160,6 +160,10 @@ files is as follows:
 <div class='title title-date'>      {docdate}       </div>
 <div class='title title-abstract'>  {docabstract}   </div>
 
+<div class='title title-body'>
+{body}
+</div>
+
 
 
 =========================== SECTIONTYPE: chapter  ===========================
