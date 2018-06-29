@@ -5,7 +5,7 @@ The sub directories contain the following examples
  1. Converting independent files
  2. Converting multiple files into a single document
  3. Using a Section Template
- 4. Section Template Tips and Tricks
+ 4. Using field filters
  5. Multiple Section Templates
  6. Title and Chapter templates
  7. Template Defaults

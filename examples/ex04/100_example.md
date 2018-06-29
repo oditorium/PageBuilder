@@ -1,4 +1,4 @@
-:title:                 Example 4
+:title:                 Example 4 - Using Field Filters
 
 :textfield:             This field is not being formatted at all.
 
