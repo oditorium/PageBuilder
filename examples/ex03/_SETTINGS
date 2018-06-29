@@ -16,9 +16,9 @@
 
 
 
-:meta:                  basefield := basevalue1, field1 := value0
+:meta:                  basefield => basevalue1, field1 => value0
 :sectionname:           -
-:info:                  -
+:info|md:               -
 
 
 # This is a heading that will be removed

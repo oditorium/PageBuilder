@@ -2,7 +2,7 @@
 :tags:            test, test2
 :keywords:        test, metamarkdown
 :headinglevel:    0
-:meta:            field1 := value1, field2 := value2
+:meta:            field1 => value1, field2 => value2
 
 # Test 2
 

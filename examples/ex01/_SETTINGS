@@ -10,7 +10,7 @@
 // everywhere, or default values that can be overwritten in
 // the respective files
 
-:meta:          basefield := basevalue1, field1 := value0
+:meta:          basefield => basevalue1, field1 => value0
 
 
 # This is a heading that will be removed
