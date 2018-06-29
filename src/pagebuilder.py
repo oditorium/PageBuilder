@@ -672,19 +672,31 @@ class PageBuilder():
                 except ValueError:
                     continue
 
+                # params[field] always contain the raw field data
+                # the filtered data is in params[k]; for example
+                #
+                #   :field|md:      some **bold** text
+                #
+                # yields
+                #
+                #   params["field"] = "some **bold** text"
+                #   params["field|md"] = "<p> some <strong>bold</strong> text</p>"
+                #
+                params1[field] = v
+
                 # markdown filter -> convert from markdown, wrap in div
                 if filter == "md":
-                    params1[field] = \
+                    params1[k] = \
                         "<div class='ff ff-md ff-{1}'>{0}</div>".format(mm.parse_markdown(v),k[0:-3])
 
                 # pre filter -> wrap in pre
                 elif filter == "pre":
-                    params1[field] = \
+                    params1[k] = \
                         "<pre class='ff ff-pre ff-{1}'>{0}</pre>".format(v, k[0:-4])
 
                 # pre filter -> wrap in div
                 elif filter == "div":
-                    params1[field] = \
+                    params1[k] = \
                         "<div class='ff ff-div ff-{1}'>{0}</div>".format(v, k[0:-4])
 
                 # dict filter -> interpret as (ordered) dict
@@ -692,43 +704,43 @@ class PageBuilder():
                     #dct = mm.parse_dict(v, sep=DICTSEP)
                     #dct = {k:v for k,v in dct.items()}
                     #params1[field] = dct
-                    params1[field] = mm.parse_dict(v, sep=DICTSEP)
+                    params1[k] = mm.parse_dict(v, sep=DICTSEP)
 
                 # lines filter -> split string by lines
                 elif filter == "ln":
-                    params1[field] = mm.parse_lines(v)
+                    params1[k] = mm.parse_lines(v)
 
                 # csv filter -> split at commas (tuple)
                 elif filter == "csv":
-                    params1[field] = mm.parse_csv(v)
+                    params1[k] = mm.parse_csv(v)
 
                 # tbl filter -> split at commas, render as html table (1st row and col th)
                 elif filter == "tbl":
-                    params1[field] = mm.parse_table_html(v,
+                    params1[k] = mm.parse_table_html(v,
                             first_row_th=True, first_col_th=True, cls=field)
 
                 # tbl filter -> split at commas, render as html table (only td)
                 elif filter == "tbltd":
-                    params1[field] = mm.parse_table_html(v,
+                    params1[k] = mm.parse_table_html(v,
                             first_row_th=False, first_col_th=False, cls=field)
 
                 # tblh filter -> split at commas, render as horizontal html table (1st row th)
                 elif filter == "tblh":
-                    params1[field] = mm.parse_table_html(v,
+                    params1[k] = mm.parse_table_html(v,
                             first_row_th=True, first_col_th=False, cls=field)
 
                 # tblv filter -> split at commas, render as vertical html table (1st col th)
                 elif filter == "tblv":
-                    params1[field] = mm.parse_table_html(v,
+                    params1[k] = mm.parse_table_html(v,
                             first_row_th=False, first_col_th=True, cls=field)
 
                 # brk filter -> preserve (double) line breaks
                 elif filter == "brk":
-                    params1[field] = mm.parse_breaks(v)
+                    params1[k] = mm.parse_breaks(v)
 
                 # now filter -> expects format string, returns current time
                 elif filter == "now":
-                    params1[field] = mm.parse_now(v)
+                    params1[k] = mm.parse_now(v)
 
                 else:
                     raise RuntimeError("Unkown filter '{}'".format(filter))
