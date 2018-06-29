@@ -54,14 +54,14 @@
 
 :_sectiontemplate:      <h2> {heading} </h2>
 
-                        {text1}
-                        {table1}
-                        {texth}
-                        {tableh}
-                        {textv}
-                        {tablev}
-                        {texttd}
-                        {tabletd}
+                        {text1|md}
+                        {table1|tbl}
+                        {texth|md}
+                        {tableh|tblh}
+                        {textv|md}
+                        {tablev|tblv}
+                        {texttd|md}
+                        {tabletd|tbltd}
                         {body}
 
 
@@ -73,12 +73,12 @@ template used for rendering this page is
 
     :_sectiontemplate:      <h2> {heading} </h2>
 
-                            {text1}
-                            {table1}
-                            {texth}
-                            {tableh}
-                            {textv}
-                            {tablev}
-                            {texttd}
-                            {tabletd}
+                            {text1|md}
+                            {table1|tbl}
+                            {texth|md}
+                            {tableh|tblh}
+                            {textv|md}
+                            {tablev|tblv}
+                            {texttd|md}
+                            {tabletd|tbltd}
                             {body}

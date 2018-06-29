@@ -1,4 +1,4 @@
-:title:                 Table 1
+:title:                 Table 1 - BROKEN
 :sectiontemplate:       element
 
 :pre|md:                The text in the `pre` field will be rendered
@@ -19,3 +19,7 @@
 
 
 The body text, if present, will be rendered last.
+
+**THIS EXAMPLE BROKE WHEN THE RAW TEXT WAS RENDERED INTO THE BASE TAG
+AND THE FILTERED TEXT INTO THE FILTERED TAG. THIS TEMPLATE ASSUMES THAT
+PRE / ELEMENT / POST CONTAIN THE FILTERED TEXT**
