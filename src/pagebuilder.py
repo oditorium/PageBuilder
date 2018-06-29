@@ -149,15 +149,15 @@ files is as follows:
 //                      the body content is not rendered at all and can
 //                      for example be used for comments
 
-:defaults:              doctitle =>     DEFINE IN :doctitle: METATAG,
-                        docauthor =>    DEFINE IN :docauthor: METATAG,
-                        docdate =>      DEFINE IN :docdate: METATAG,
-                        docabstract =>  DEFINE IN :docabstract: METATAG,
+:defaults:              doctitle =>         DEFINE IN :doctitle: METATAG,
+                        docauthor =>        DEFINE IN :docauthor: METATAG,
+                        docdate_html =>     DEFINE IN :docdate: METATAG,
+                        docabstract =>      DEFINE IN :docabstract: METATAG,
 
 <h1>{doctitle}</h1>
 
 <div class='title title-author'>    {docauthor}     </div>
-<div class='title title-date'>      {docdate}       </div>
+<div class='title title-date'>      {docdate_html}  </div>
 <div class='title title-abstract'>  {docabstract}   </div>
 
 <div class='title title-body'>
@@ -670,6 +670,7 @@ class PageBuilder():
                 try:
                     field, filter = k.split("|")
                 except ValueError:
+                    params1[k+"_html"] = v
                     continue
 
                 # params[field] always contain the raw field data
@@ -688,16 +689,19 @@ class PageBuilder():
                 if filter == "md":
                     params1[k] = \
                         "<div class='ff ff-md ff-{1}'>{0}</div>".format(mm.parse_markdown(v),k[0:-3])
+                    params1[field+"_html"] = params1[k]
 
                 # pre filter -> wrap in pre
                 elif filter == "pre":
                     params1[k] = \
                         "<pre class='ff ff-pre ff-{1}'>{0}</pre>".format(v, k[0:-4])
+                    params1[field+"_html"] = params1[k]
 
                 # pre filter -> wrap in div
                 elif filter == "div":
                     params1[k] = \
                         "<div class='ff ff-div ff-{1}'>{0}</div>".format(v, k[0:-4])
+                    params1[field+"_html"] = params1[k]
 
                 # dict filter -> interpret as (ordered) dict
                 elif filter == "dct":
@@ -718,21 +722,25 @@ class PageBuilder():
                 elif filter == "tbl":
                     params1[k] = mm.parse_table_html(v,
                             first_row_th=True, first_col_th=True, cls=field)
+                    params1[field+"_html"] = params1[k]
 
                 # tbl filter -> split at commas, render as html table (only td)
                 elif filter == "tbltd":
                     params1[k] = mm.parse_table_html(v,
                             first_row_th=False, first_col_th=False, cls=field)
+                    params1[field+"_html"] = params1[k]
 
                 # tblh filter -> split at commas, render as horizontal html table (1st row th)
                 elif filter == "tblh":
                     params1[k] = mm.parse_table_html(v,
                             first_row_th=True, first_col_th=False, cls=field)
+                    params1[field+"_html"] = params1[k]
 
                 # tblv filter -> split at commas, render as vertical html table (1st col th)
                 elif filter == "tblv":
                     params1[k] = mm.parse_table_html(v,
                             first_row_th=False, first_col_th=True, cls=field)
+                    params1[field+"_html"] = params1[k]
 
                 # brk filter -> preserve (double) line breaks
                 elif filter == "brk":
@@ -741,6 +749,7 @@ class PageBuilder():
                 # now filter -> expects format string, returns current time
                 elif filter == "now":
                     params1[k] = mm.parse_now(v)
+                    params1[field+"_html"] = params1[k]
 
                 else:
                     raise RuntimeError("Unkown filter '{}'".format(filter))
