@@ -41,6 +41,7 @@ __version__ = "1.1"
 import re
 import markdown as mdwn
 from collections import OrderedDict
+from collections import namedtuple
 from types import SimpleNamespace
 from datetime import datetime
 
@@ -264,6 +265,11 @@ def parse_now(s):
 ## FILTERS
 ################################################################################
 
+# Filters are functions that take a string (possible also some additional
+# parameters) and that return a modification of that string; for example,
+# a the `_replace_emdash` filter replaces all double-hyphens `--` with
+# em-dashes `—`
+
 def _replace_emdash(s, execute=True):
     """
     replace -- with em-dash
@@ -299,6 +305,37 @@ def _definitionsOnly(s, execute=0):
     """
     if not execute: return s
     return "\n".join(re.findall("^\s*[[].*[\]]:.*$", s, re.MULTILINE))
+
+
+
+################################################################################
+## ANALYSIS FUNCTIONS
+################################################################################
+
+# Analysis Functions are similar to filters in that they take a string, the
+# string being the text that is being converted. Contrary to filters however
+# they do not modify the text -- and therefore they dont return it -- but they
+# perform some analysis on the text, and they return a struct representing
+# the result of this analysis
+
+_Reference = namedtuple('Reference', ['ref', 'url'])
+
+def _extract_references(md, arg=None):
+    """
+    scan a markown string for link definitions
+
+    :md:        the markdown text to be scanned
+    :arg:       dummy argument
+    :returns:   tuple(r1, r2, ...)
+                where rx = _Reference(refx, urlx)
+
+    NOTES
+    - link definitions are of the form `[ref]:url`
+    - references are returned as named tuples `Reference(ref, url)`
+    """
+    pattern = "\[([\w]*)\]:([\w:\/\.-]*)\s"
+    result = re.findall(pattern, md)
+    return {"references": tuple( _Reference(*ref) for ref in result)}
 
 
 ################################################################################
@@ -392,13 +429,18 @@ class Parser():
             "definitionsOnly":          _definitionsOnly,
     }
 
+    _analysers = {
+            "extractReferences":        _extract_references,
+    }
+
 
     ######################################################################
     ## CONSTRUCTOR
-    def __init__(s, fieldParsers=None, createHtml=True, **filterSettings):
+    def __init__(s, fieldParsers=None, createHtml=True, filters=None, analysers=None):
         s.fieldParsers      = fieldParsers
         s.createHtml        = createHtml
-        s.filterSettings    = filterSettings
+        s.filterSettings    = filters if not filters is None else {}
+        s.analyserSettings  = analysers if not analysers is None else {}
 
 
     ######################################################################
@@ -408,15 +450,36 @@ class Parser():
         applies all selected filters to document
 
         :doc:           the document
-        :returns:       the document with filters apply
+        :returns:       the document with filters applied
         """
         for afilter, aparam in s.filterSettings.items():
+            if aparam is False: continue
             try:
                 filterf = s._filters[afilter]
                 doc = filterf(doc, aparam)
             except:
                 raise
         return doc
+
+    ######################################################################
+    ## APPLY ANALYSERS
+    def _applyAnalysers(s, doc):
+        """
+        applies all selected analysers to document
+
+        :doc:           the document
+        :returns:       a single dict, aggregating all dicts that have been
+                        returned by the analysers selected
+        """
+        result = {}
+        for ananalyser, aparam in s.analyserSettings.items():
+            if aparam is False: continue
+            try:
+                analyserf = s._analysers[ananalyser]
+                result.update(analyserf(doc, aparam))
+            except:
+                raise
+        return result
 
 
     ######################################################################
@@ -572,14 +635,20 @@ class Parser():
             # the file so either this must be read done here, or the
             # file must be scanned twice...
 
+        # apply the selected analysers to the markdown
+        analysis = s._applyAnalysers(body)
+
         # convert the markdown to html (if desired)
         if s.createHtml and createHtml:
             html = mdwn.markdown(body)
         else:
             html = None
 
+
+        #print ("ANALYSIS MM", analysis)
         return SimpleNamespace(
             meta        = meta,
+            analysis    = analysis,
             body        = body,
             html        = html,
         )

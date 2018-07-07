@@ -418,9 +418,10 @@ class PageBuilder():
         "_style":                       _STYLE,
         "_meta":                        _META,
         "_settings":                    "",
-        "_replaceEmDash":               True,
-        "_removeComments":              True,
-        "_removeLineComments":          False,
+        "_replaceEmDash":               True,       # filter: replace -- with em-dash
+        "_removeComments":              True,       # filter: remove comments
+        "_removeLineComments":          False,      # filter: remove line comments
+        "_extractReferences":           True,       # analyser: extract references (ie URLs)
         #"_definitionsOnly":            False,
     }
 
@@ -451,10 +452,15 @@ class PageBuilder():
 
         s._parse = mm.Parser(
                         fieldParsers            = s._fieldParsers,
-                        replaceEmDash           = s.p['_replaceEmDash'],
-                        removeComments          = s.p['_removeComments'],
-                        removeLineComments      = s.p['_removeLineComments'],
-                        #definitionsOnly         = s.p['_definitionsOnly'],
+                        filters = {
+                            'replaceEmDash':            s.p['_replaceEmDash'],
+                            'removeComments':           s.p['_removeComments'],
+                            'removeLineComments':       s.p['_removeLineComments'],
+                            #'definitionsOnly':         s.p['_definitionsOnly'],
+                        },
+                        analysers = {
+                            'extractReferences': s.p['_extractReferences'],
+                        }
         )
         s._readSettings(s.p['_settings']);
 
@@ -522,7 +528,14 @@ class PageBuilder():
         """
         processes one markdown file
         """
-        return s._parse(md, createHtml=createHtml)
+        result = s._parse(md, createHtml=createHtml)
+        #print("ANALYSIS PB", result.analysis)
+        return result
+            # because this gets a bit confusing:
+            # - s._parse is set in __init__ to a new metamarkdown.Parser object
+            # - calling s._parse effectively calls Parser.__call__
+            # - Parser.__call__ in turn is an alias for Parser.parse
+            # - Parser.parse in turn calls Parser._parse (and does other stuff)
 
 
     def _processTemplate(s, template_name, specific_params=None):
@@ -622,11 +635,18 @@ class PageBuilder():
         s._settings_meta = {}
         processed = mm.Parser(
                         fieldParsers=s._fieldParsers,
-                        definitionsOnly=True,
-                        removeLineComments=False,
-                        removeComments=False)(settings)
-        s._settings_body = processed.body
-        s._settings_meta = processed.meta
+                        filters = {
+                            'definitionsOnly':      True,
+                            'removeLineComments':   False,
+                            'removeComments':       False,
+                        },
+                        analysers = {
+                            'extractReferences':    True,
+                        }
+                        )(settings)
+        s._settings_body        = processed.body
+        s._settings_meta        = processed.meta
+        s._settings_analysis    = processed.analysis
 
     @property
     def _style(s):
@@ -811,6 +831,8 @@ class PageBuilder():
             **meta                          # that's meta data that might be rendered
         )
 
+    _MMD = namedtuple("mmdData", "pageHtml sectionHtml metaData metaDataRaw analysis")
+
     def createHtmlPageFromMetaMarkdown(s, metaMarkdown, **additionalMeta):
         """
         creates an entire HtmlPage based on the meta markdown
@@ -822,6 +844,10 @@ class PageBuilder():
 
         # process the meta markdown file with the settings body (links!)
         processed = s._processMetaMarkdown(metaMarkdown+s._settings_body)
+
+        # extract the analysis
+        analysis = processed.analysis
+        #print("ANALYSIS PB2", analysis)
 
         # combine the meta data (processed > settings > additional)
         metaData = contract([additionalMeta, s._settings_meta, processed.meta])
@@ -836,11 +862,10 @@ class PageBuilder():
         html = s.createHtmlPageFromHtmlAndMeta(bodyHtml=sectionHtml, meta=metaData)
 
         # return the results
-        MMD = namedtuple("mmdData", "pageHtml sectionHtml metaData metaDataRaw")
         metaData['_body'] = processed.body
             # also store the body as a meta data field
             # TODO: should this happen in the meta markdown class?
-        return MMD(html, sectionHtml, metaData, processed.meta)
+        return s._MMD(html, sectionHtml, metaData, processed.meta, analysis)
 
     def __call__(s, *args, **kwargs):
         """
@@ -1118,11 +1143,13 @@ Version v{}
             fnhtml = fnbase+".html"
             files.append( (fn, fnbase, fnhtml) )
             with open(fn, "r") as f: file_contents_mmd = f.read()
-            html, inner_html, meta_data, meta_data_raw = builder(
-                                                file_contents_mmd,
-                                                _filename=fn,
-                                                _filenamebase=fnbase
-            )
+            html, inner_html, meta_data, meta_data_raw, analysis = \
+                builder(
+                    file_contents_mmd,
+                    _filename=fn,
+                    _filenamebase=fnbase
+                )
+            #print ("ANALYSIS PB3", analysis)
             #try:
             #    print("====>ID QQQ", meta_data.get("id"))
             #    print("====>SCORING QQQ", meta_data.get("scoring").get("Attractiveness"))
@@ -1152,7 +1179,7 @@ Version v{}
         #    try: print("QQQ", d.get("scoring").get("Attractiveness"))
         #    except: pass
 
-        return (files, html_list, meta_data_list, meta_data_raw_list, full_meta)
+        return (files, html_list, meta_data_list, meta_data_raw_list, full_meta, analysis)
 
     def createJointDocument(s, builder, htmlList, meta, save=True):
         """
@@ -1201,18 +1228,23 @@ Version v{}
 
         return (html,)
 
-    def saveMetaData(s, meta, metaRaw, saveYAML=True, saveJSON=True, saveAggr=True, saveRaw=True):
+    def saveMetaAndAnalysisData(s,
+                    meta, metaRaw, analysis,
+                    saveYAML=True, saveJSON=True,
+                    saveAggr=True, saveRaw=True, saveAnalysis=True):
         """
         saves the list meta data in YAML and/or JSON format
 
         :meta:          list of aggregate meta data (including settings)
         :metaRaw:       list of raw meta data (excluding settings)
+        :analysis:      the result of all the analysis' run
         :saveYAML:      save as YAML
         :saveJSON:      save as JSON
         :saveAggr:      save aggregated list
         :saveRaw:       save raw list
         """
-        FNBASE = "document"
+        FNBASE  = "document"
+        FNBASEA = FNBASE + "_analysis"
             # TODO: link output to flags
 
         if saveYAML:
@@ -1224,6 +1256,11 @@ Version v{}
                 print ("saving raw meta data (output: {0}.r.yaml)".format(FNBASE))
                 with open("{}.r.yaml".format(FNBASE), "w") as f:
                     f.write(yaml.dump(metaRaw, default_flow_style=False))
+            if saveAnalysis:
+                print ("saving analysis data (output: {0}.yaml)".format(FNBASEA))
+                with open("{}.yaml".format(FNBASEA), "w") as f:
+                    f.write(yaml.dump(analysis, default_flow_style=False))
+
 
         if saveJSON:
             if saveAggr:
@@ -1234,6 +1271,10 @@ Version v{}
                 print ("saving raw meta data (output: {0}.r.json)".format(FNBASE))
                 with open("{}.r.json".format(FNBASE), "w") as f:
                     f.write(json.dumps(metaRaw))
+            if saveAnalysis:
+                print ("saving analysis data (output: {0}.json)".format(FNBASEA))
+                with open("{}.json".format(FNBASEA), "w") as f:
+                    f.write(json.dumps(analysis))
 
     def run(s, **kwargs):
         """
@@ -1279,8 +1320,10 @@ Version v{}
         print("Available section template names:", builder.p['_sectiontemplatenames'])
         print("Data:", tuple(data.keys()))
 
-        files, html_list, meta_data_list, meta_data_raw_list, full_meta = \
+        files, html_list, meta_data_list, meta_data_raw_list, full_meta, analysis = \
                                     s.readAndProcessInputFiles(mdfiles, builder)
+
+        #print ("ANALYSIS PB4", analysis)
 
         if join or 'join' in full_meta or 'jointfilename' in full_meta:
             document_html, = s.createJointDocument(builder, html_list, full_meta)
@@ -1288,8 +1331,10 @@ Version v{}
         #for d in meta_data_list:
         #    try: print("QQQ", d.get("scoring").get("Attractiveness"))
         #    except: pass
-        s.saveMetaData(meta_data_list, meta_data_raw_list,
-            saveYAML=True, saveJSON=True, saveAggr=True, saveRaw=False)
+        s.saveMetaAndAnalysisData(
+            meta_data_list, meta_data_raw_list, analysis,
+            saveYAML=True, saveJSON=True, saveAnalysis=True,
+            saveAggr=True, saveRaw=False)
 
         index_html, = s.createIndexHtml(files)
 
