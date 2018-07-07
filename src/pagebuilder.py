@@ -600,7 +600,7 @@ class PageBuilder():
         # include the page-specific parameters from the data file
         try:
             file_params = s.p["_select"][params["_filename"]]
-            print("Using file-specific params:", params["_filename"], file_params)
+            #print("FILE SPECIFIC PARAMS", params["_filename"], len(file_params))
             params.update(file_params)
         except:
             pass
@@ -644,9 +644,10 @@ class PageBuilder():
                             'extractReferences':    True,
                         }
                         )(settings)
+        processed.meta["_analysis"] = processed.analysis
+
         s._settings_body        = processed.body
         s._settings_meta        = processed.meta
-        s._settings_analysis    = processed.analysis
 
     @property
     def _style(s):
@@ -831,7 +832,7 @@ class PageBuilder():
             **meta                          # that's meta data that might be rendered
         )
 
-    _MMD = namedtuple("mmdData", "pageHtml sectionHtml metaData metaDataRaw analysis")
+    _MMD = namedtuple("mmdData", "pageHtml sectionHtml metaData metaDataRaw")
 
     def createHtmlPageFromMetaMarkdown(s, metaMarkdown, **additionalMeta):
         """
@@ -863,9 +864,10 @@ class PageBuilder():
 
         # return the results
         metaData['_body'] = processed.body
+        metaData['_analysis'] = processed.analysis
             # also store the body as a meta data field
             # TODO: should this happen in the meta markdown class?
-        return s._MMD(html, sectionHtml, metaData, processed.meta, analysis)
+        return s._MMD(html, sectionHtml, metaData, processed.meta)
 
     def __call__(s, *args, **kwargs):
         """
@@ -1141,9 +1143,12 @@ Version v{}
             fnbase, _ = os.path.splitext(fn)
             _, fnbase = os.path.split(fnbase)
             fnhtml = fnbase+".html"
+            fnjson = fnbase+".json"
+            fnyaml = fnbase+".yaml"
             files.append( (fn, fnbase, fnhtml) )
             with open(fn, "r") as f: file_contents_mmd = f.read()
-            html, inner_html, meta_data, meta_data_raw, analysis = \
+            #html, inner_html, meta_data, meta_data_raw, analysis = \
+            html, inner_html, meta_data, meta_data_raw = \
                 builder(
                     file_contents_mmd,
                     _filename=fn,
@@ -1174,12 +1179,16 @@ Version v{}
             if save:
                 print("converting {0} to html (output: {1})".format(fn, fnhtml))
                 with open(fnhtml, "w") as f: f.write(html)
+                #with open(fnjson, "w") as f: f.write(json.dumps(analysis))
+                #with open(fnyaml, "w") as f: f.write("TODO")
+
 
         #for d in meta_data_list:
         #    try: print("QQQ", d.get("scoring").get("Attractiveness"))
         #    except: pass
 
-        return (files, html_list, meta_data_list, meta_data_raw_list, full_meta, analysis)
+        #return (files, html_list, meta_data_list, meta_data_raw_list, full_meta, analysis)
+        return (files, html_list, meta_data_list, meta_data_raw_list, full_meta)
 
     def createJointDocument(s, builder, htmlList, meta, save=True):
         """
@@ -1231,7 +1240,7 @@ Version v{}
     def saveMetaAndAnalysisData(s,
                     meta, metaRaw, analysis,
                     saveYAML=True, saveJSON=True,
-                    saveAggr=True, saveRaw=True, saveAnalysis=True):
+                    saveAggr=True, saveRaw=True, saveAnalysis=False):
         """
         saves the list meta data in YAML and/or JSON format
 
@@ -1320,7 +1329,8 @@ Version v{}
         print("Available section template names:", builder.p['_sectiontemplatenames'])
         print("Data:", tuple(data.keys()))
 
-        files, html_list, meta_data_list, meta_data_raw_list, full_meta, analysis = \
+        #files, html_list, meta_data_list, meta_data_raw_list, full_meta, analysis = \
+        files, html_list, meta_data_list, meta_data_raw_list, full_meta = \
                                     s.readAndProcessInputFiles(mdfiles, builder)
 
         #print ("ANALYSIS PB4", analysis)
@@ -1331,9 +1341,10 @@ Version v{}
         #for d in meta_data_list:
         #    try: print("QQQ", d.get("scoring").get("Attractiveness"))
         #    except: pass
+        analysis_dummy = {} # placeholder for aggregate analysis
         s.saveMetaAndAnalysisData(
-            meta_data_list, meta_data_raw_list, analysis,
-            saveYAML=True, saveJSON=True, saveAnalysis=True,
+            meta_data_list, meta_data_raw_list, analysis_dummy,
+            saveYAML=True, saveJSON=True, saveAnalysis=False,
             saveAggr=True, saveRaw=False)
 
         index_html, = s.createIndexHtml(files)
