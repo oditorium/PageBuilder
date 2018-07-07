@@ -6,7 +6,7 @@ creates a self-contained HTML page from a metamarkdown file
 Licensed under the MIT License
 <https://opensource.org/licenses/MIT>
 """
-__version__ = "4.0b2"
+__version__ = "4.1"
 
 # NOTE: The _processTemplate function is the key function that combines all
 # the different parameters and it is a bit of a mess, because parameters
