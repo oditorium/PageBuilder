@@ -44,6 +44,11 @@ for i in range(len(data)):
 ## WRITING THE OUTPUT FILE
 out = {
     "_select": out_sums,
+        # the key `_select` is special; it MUST contain a dict where the
+        # dict keys are the filename (from the `_filename` field); when
+        # a specific file `filename` is processed, the content of
+        # out["_select"][filename] (which must be a dict) is added to
+        # the environment, and can be added in the template
     #"sums": 1,
 }
 with open(OUTFN, "w") as f: f.write(json.dumps(out))

@@ -1,0 +1,5 @@
+rm index*.*
+rm document*.*
+rm *.json
+rm *.yaml
+rm 1*.html

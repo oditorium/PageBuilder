@@ -1,0 +1,12 @@
+# Example 11 -- Extract References
+## Usage
+
+- run `convert` to convert the files
+- run `serve` to serve the current directory
+- run `clean` to remove generated files
+
+## Description
+
+This example shows how to extract markdown references from a file (including
+references that are not used); this only extracts references that are of
+the form `[ref]:url`, but not inline reference of the form `[description](url)`

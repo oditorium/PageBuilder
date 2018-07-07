@@ -12,3 +12,4 @@ The sub directories contain the following examples
  8. Post-processing and re-integrating data; ToC
  9. Processing data and re-injecting it into the source sheet
 10. Inline templates and the table filters
+11. Extracting references

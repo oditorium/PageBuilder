@@ -1,0 +1,3 @@
+../../src/pagebuilder.py -j 1*.md
+./process.py
+../../src/pagebuilder.py -j 1*.md

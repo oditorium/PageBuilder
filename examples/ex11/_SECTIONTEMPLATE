@@ -1,0 +1,8 @@
+:defaults:      refs =>       SHOULD COME FROM DATA
+
+{body}
+
+<h3>References</h3>
+<ul class='references'>
+{refs}
+</ul>
